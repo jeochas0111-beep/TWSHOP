@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>州税率面板</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>美国州税率面板</h1>
+      <p>维护州缩写、州名和税率参数</p>
+    </div>
+    <div class="toolbar">
+      <button class="btn secondary" type="button" onclick="location.href='/'">返回订单页</button>
+      <button class="btn secondary" id="refreshTaxRatesBtn" type="button">刷新</button>
+      <button class="btn secondary" id="addTaxRateRowBtn" type="button">新增</button>
+      <button class="btn primary" id="saveTaxRatesBtn" type="button">保存州税率</button>
+    </div>
+  </header>
+
+  <main>
+    <article class="card">
+      <div id="taxRatesStatus" class="notice">加载中...</div>
+      <div class="table-wrap">
+        <table id="taxRatesTable"></table>
+      </div>
+    </article>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/tax-rates.js"></script>
+</body>
+</html>

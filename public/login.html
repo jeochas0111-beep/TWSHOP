@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Twodrapes — 登录</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    main { max-width: 400px; width: 100%; }
+    .login-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 32px;
+      text-align: center;
+    }
+    .login-card h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 22px;
+      color: var(--brand2);
+      margin: 0 0 4px;
+    }
+    .login-card .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+    .login-card label {
+      display: block;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-label);
+      margin-bottom: 4px;
+    }
+    .login-card input[type="text"],
+    .login-card input[type="password"],
+    .login-card select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      margin-bottom: 16px;
+      background: var(--surface);
+    }
+    .login-card input:focus,
+    .login-card select:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(176,90,48,.1);
+      outline: none;
+    }
+    .login-card .btn {
+      width: 100%;
+      padding: 11px;
+      font-size: 14px;
+    }
+    .login-error {
+      color: var(--bad);
+      font-size: 13px;
+      margin-top: 12px;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="login-card">
+      <h1>Twodrapes</h1>
+      <div class="subtitle" id="channelLabel">登录</div>
+      <form id="loginForm">
+        <label for="channelSelect" id="channelSelectLabel" style="display:none">渠道</label>
+        <select id="channelSelect" style="display:none">
+          <option value="shopify">独立站</option>
+          <option value="amazon">亚马逊</option>
+        </select>
+        <label for="username">用户名</label>
+        <input id="username" type="text" autocomplete="username" required autofocus>
+        <label for="password">密码</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button class="btn primary" type="submit" id="loginBtn">登录</button>
+      </form>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </main>
+  <script>
+    (function () {
+      const port = location.port;
+      const isLoginPort = port === '8083';
+      const isManagement = port === '8081';
+      const isAmazon = port === '8082';
+      const channel = isAmazon ? 'amazon' : 'shopify';
+
+      const channelNames = { shopify: '独立站端', amazon: '亚马逊端' };
+      const labels = { shopify: '独立站端', amazon: '亚马逊端', login: 'Twodrapes', management: '管理端' };
+
+      // Title and label
+      if (isLoginPort) {
+        document.getElementById('channelLabel').textContent = '登录';
+        document.title = 'Twodrapes — 登录';
+      } else if (isManagement) {
+        document.getElementById('channelLabel').textContent = labels.management + ' — 登录';
+        document.title = 'Twodrapes — ' + labels.management + ' — 登录';
+      } else {
+        document.getElementById('channelLabel').textContent = labels[channel] + ' — 登录';
+        document.title = 'Twodrapes — ' + labels[channel] + ' — 登录';
+      }
+
+      // Login port (8083) and management port (8081): show channel selector
+      if (isLoginPort || isManagement) {
+        document.getElementById('channelSelectLabel').style.display = '';
+        document.getElementById('channelSelect').style.display = '';
+      }
+
+      // Channel port map for redirects
+      const channelPorts = { shopify: '8080', amazon: '8082' };
+
+      // Check existing token on load
+      const token = localStorage.getItem('twodrapes_token');
+      if (token) {
+        fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, channel })
+        }).then(r => r.json()).then(d => {
+          if (!d.ok || !d.user) {
+            localStorage.removeItem('twodrapes_token');
+            localStorage.removeItem('twodrapes_user');
+            return;
+          }
+          const userChannel = d.user.channel;
+          if (isLoginPort || isManagement) {
+            // 登录端/管理端: redirect to the user's channel port
+            const targetPort = channelPorts[userChannel];
+            if (targetPort) {
+              location.href = '//' + location.hostname + ':' + targetPort + '/';
+            }
+          } else {
+            // 运营端: redirect only if channel matches
+            if (userChannel === channel) {
+              location.href = '/';
+            }
+          }
+        }).catch(() => {});
+      }
+
+      // Login form
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorEl = document.getElementById('loginError');
+        const btn = document.getElementById('loginBtn');
+        errorEl.textContent = '';
+        btn.disabled = true;
+        btn.textContent = '登录中...';
+
+        try {
+          const username = document.getElementById('username').value;
+          const password = document.getElementById('password').value;
+          const loginChannel = (isLoginPort || isManagement) ? document.getElementById('channelSelect').value : channel;
+
+          const url = '/api/auth/login';
+          const body = (isLoginPort || isManagement)
+            ? { channel: loginChannel, username, password }
+            : { username, password };
+
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          if (data.ok) {
+            localStorage.setItem('twodrapes_token', data.token);
+            localStorage.setItem('twodrapes_user', JSON.stringify(data.user));
+            if (isLoginPort || isManagement) {
+              // 登录端/管理端: redirect to the user's channel port
+              const targetPort = channelPorts[data.user.channel];
+              if (targetPort) {
+                location.href = '//' + location.hostname + ':' + targetPort + '/';
+              } else {
+                location.href = '/';
+              }
+            } else {
+              location.href = '/';
+            }
+          } else {
+            errorEl.textContent = data.error || '登录失败';
+          }
+        } catch (err) {
+          errorEl.textContent = '网络错误，请重试';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '登录';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

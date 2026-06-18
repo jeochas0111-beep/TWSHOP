@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TWODRAPES 生产参数设置</title>
+  <link rel="stylesheet" href="/css/factory.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>TWODRAPES 生产参数设置</h1>
+      <p>管理端参数维护</p>
+    </div>
+    <div class="toolbar">
+      <button class="btn secondary" type="button" onclick="location.href='/'">返回订单页</button>
+      <button class="btn secondary" id="refreshParamsBtn">刷新参数</button>
+      <button class="btn primary" id="saveParamsBtn">保存生产参数</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card params-card">
+      <div id="paramsStatus" class="notice">参数已从服务器同步。修改后点击“保存生产参数”，运营端会使用新参数重新计算。</div>
+      <div id="paramsSummary" class="param-grid"></div>
+
+      <div class="split">
+        <div>
+          <div class="subsection-head">
+            <h3>面料参数</h3>
+            <button class="btn tiny" type="button" data-action="add-material" data-type="fabric">添加面料</button>
+          </div>
+          <div class="table-wrap small-table"><table id="fabricTable"></table></div>
+        </div>
+        <div>
+          <div class="subsection-head">
+            <h3>内衬参数</h3>
+            <button class="btn tiny" type="button" data-action="add-material" data-type="lining">添加内衬</button>
+          </div>
+          <div class="table-wrap small-table"><table id="liningTable"></table></div>
+        </div>
+      </div>
+
+      <div class="split">
+        <div><h3>加工费规则</h3><div class="table-wrap small-table rule-table"><table id="laborTable"></table></div></div>
+        <div><h3>定型费规则</h3><div class="table-wrap small-table rule-table"><table id="memoryTable"></table></div></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/factory.js"></script>
+</body>
+</html>
