@@ -447,7 +447,7 @@ input, select, textarea {
   color: var(--ink);
   font-size: 13px;
   box-shadow: inset 0 1px 2px rgba(0,0,0,.03);
-  transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
+  transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease), background var(--duration-fast) var(--ease);
 }
 textarea { min-height: 82px }
 input:hover, select:hover, textarea:hover { border-color: var(--border-hover) }
@@ -457,6 +457,34 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(0,122,255,.15);
   background-color: #fff;
 }
+input[type="date"] {
+  min-height: 36px;
+  border: 1.5px solid var(--line);
+  background: rgba(255,255,255,.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: var(--radius-md);
+  padding: 7px 10px;
+  color: var(--ink);
+  font-size: 13px;
+  transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease), background var(--duration-fast) var(--ease);
+}
+input[type="date"]:hover {
+  border-color: var(--border-hover);
+  background: rgba(255,255,255,.95);
+}
+input[type="date"]:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(0,122,255,.15);
+  background: rgba(255,255,255,.95);
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: .55;
+  cursor: pointer;
+  transition: opacity .15s var(--ease);
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: .85 }
 
 select {
   -webkit-appearance: none;
@@ -693,24 +721,31 @@ button:focus-visible,
   background: var(--bad-bg);
 }
 .period-bar {
-  display: flex;
-  gap: 4px;
-  padding: 0 0 10px;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgba(226,232,240,0.8);
+  border-radius: 10px;
+  background: rgba(255,255,255,.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  margin-bottom: 10px;
 }
 .period-btn {
   min-height: 30px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   background: transparent;
   color: var(--muted);
   padding: 5px 14px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  transition: background var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+  line-height: 1.1;
+  transition: all .15s var(--ease);
 }
-.period-btn:hover { background: var(--surface-highlight); color: var(--ink) }
-.period-btn.active { background: var(--brand); color: #fff; }
+.period-btn:hover { background: rgba(0,0,0,.04); color: var(--ink) }
+.period-btn.active { background: var(--brand); color: #fff; box-shadow: 0 1px 4px rgba(0,122,255,.25); }
 
 /* ===== Pills & Badges ===== */
 .pill {
@@ -871,7 +906,14 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
 }
 .info-panel.full { grid-column: 1/-1 }
 .info-panel h3 { margin: 0 0 10px; color: var(--ink); font-size: 13px; font-weight: 600 }
-.order-date-panel { background: var(--brand-light); border-color: var(--accent-border) }
+.order-date-panel {
+  background: rgba(255,255,255,.65);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: var(--radius-lg);
+}
+.order-date-panel h3 { color: var(--ink) }
 .order-main-panel { background: var(--card) }
 .compact-order .order-main-panel .form-grid {
   display: grid;
@@ -3379,7 +3421,7 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
   }
   .topbar, .card, .modal-panel, .notify-panel, .tools-dropdown-menu, .order-action-menu,
   .orders-filter-panel, .analytics-filters, .analytics-metric-card, .analytics-panel,
-  .channel-section, nav, .tab-nav, .btn.secondary {
+  .channel-section, nav, .tab-nav, .btn.secondary, .period-bar, .order-date-panel {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -3392,7 +3434,7 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
     backdrop-filter: saturate(120%) blur(12px);
     -webkit-backdrop-filter: saturate(120%) blur(12px);
   }
-  .analytics-metric-card, .analytics-panel, .channel-section {
+  .analytics-metric-card, .analytics-panel, .channel-section, .period-bar, .order-date-panel {
     backdrop-filter: saturate(120%) blur(10px);
     -webkit-backdrop-filter: saturate(120%) blur(10px);
   }
@@ -3428,6 +3470,9 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
   .profit-order-results { background: rgba(255,255,255,.97) }
   select, .filter-field select { background: rgba(255,255,255,.95) }
   .profit-order-search input, .splice-order-search input { background: rgba(255,255,255,.95) }
+  .period-bar { background: rgba(255,255,255,.95) }
+  .order-date-panel { background: rgba(255,255,255,.95) }
+  input[type="date"] { background: rgba(255,255,255,.95); backdrop-filter: none; -webkit-backdrop-filter: none }
 }
 
 /* ===== Amazon Channel — uses same theme as Shopify ===== */
