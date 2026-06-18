@@ -202,26 +202,20 @@ main {
 
 /* ===== Card ===== */
 .card {
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--card);
+  border: 1px solid var(--line-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
   padding: 20px;
   position: relative;
-  transition: box-shadow .25s var(--ease), border-color .25s var(--ease);
 }
-.card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: var(--glass-highlight);
-  clip-path: inset(0 round 12px);
-  pointer-events: none;
+.card::before, .card::after { content: none }
+.card-header {
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line-light);
 }
-.card:hover { border-color: rgba(255,255,255,.9); box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,.04); transform: translateY(-1px) }
+.card-content { padding-top: 0 }
 
 /* ===== Section Title ===== */
 .section-title, .toolbar {
@@ -244,7 +238,7 @@ main {
   letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
-.section-title h2 { font-size: 15px; display: inline-flex; align-items: center; gap: 9px }
+.section-title h2 { font-size: 15px; display: inline-flex; align-items: center; gap: 9px; padding-left: 10px; border-left: 3px solid var(--brand) }
 .section-title h2::before { content: none }
 .section-title h3 { font-size: 14px }
 .section-title.compact { margin-bottom: 10px; padding-bottom: 10px }
@@ -287,12 +281,12 @@ main {
   background: var(--brand);
   border-color: var(--brand);
   color: #fff;
-  box-shadow: 0 1px 2px rgba(0,0,0,.15);
+  box-shadow: 0 1px 2px rgba(44,74,124,.2);
 }
 .btn.primary:hover {
   background: var(--brand-hover);
   border-color: var(--brand-hover);
-  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  box-shadow: 0 2px 8px rgba(44,74,124,.25);
 }
 .btn.secondary { background: var(--card) }
 .btn.small, .btn.tiny, .icon-btn {
@@ -426,13 +420,13 @@ th {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--surface-alt);
-  color: var(--ink);
+  background: var(--surface);
+  color: var(--muted);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
-  border-bottom: 2px solid var(--line);
+  border-bottom: 1px solid var(--line-light);
   background-clip: padding-box;
 }
 th:first-child, td:first-child { position: sticky; left: 0; z-index: 2; background: inherit }
@@ -501,14 +495,13 @@ td input, td select {
   margin-bottom: 16px;
 }
 .stat-card {
-  background: var(--glass-bg-strong);
+  background: var(--card);
   border: 1px solid var(--line-light);
   border-radius: var(--radius-md);
   padding: 14px;
   text-align: left;
   min-height: 84px;
-  box-shadow: var(--glass-highlight);
-  transition: border-color .15s var(--ease), transform .15s var(--ease);
+  box-shadow: var(--shadow);
 }
 .stat-card:hover { border-color: var(--border-hover); transform: translateY(-1px) }
 .stat-card .stat-value {
@@ -1210,9 +1203,9 @@ td input, td select {
   min-height: 92px;
   border: 1px solid var(--line-light);
   border-radius: var(--radius-lg);
-  background: var(--glass-bg-strong);
+  background: var(--card);
   padding: 13px 14px;
-  box-shadow: var(--glass-highlight);
+  box-shadow: var(--shadow);
 }
 .analytics-metric-card span {
   display: block;
@@ -1478,7 +1471,7 @@ td input, td select {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .topbar, .card, .modal-panel, .notify-panel {
+  .topbar, .modal-panel, .notify-panel {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }

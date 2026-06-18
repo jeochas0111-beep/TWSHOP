@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Twodrapes 管理端</title>
   <link rel="stylesheet" href="/css/factory.css?v=20260613-ui-opt">
+  <link rel="stylesheet" href="/css/twodrapes-theme.css">
+  <script src="/js/channel-theme.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -34,13 +36,15 @@
 
     <section id="page-summary" class="page active" role="tabpanel" aria-labelledby="tab-summary">
       <article class="card">
-        <div class="section-title">
-          <h2>订单汇总</h2>
-          <div class="toolbar">
-            <button class="btn secondary small" id="summaryExportBtn">导出 CSV</button>
-            <button class="btn secondary small" id="summaryFullExportBtn">导出全部订单信息</button>
-            <button class="btn secondary small" id="summaryRefreshBtn">刷新</button>
-            <button class="btn secondary small" id="openFactorySamplesBtn" type="button">面料样品</button>
+        <div class="card-header">
+          <div class="section-title">
+            <h2>订单汇总</h2>
+            <div class="toolbar">
+              <button class="btn secondary small" id="summaryExportBtn">导出 CSV</button>
+              <button class="btn secondary small" id="summaryFullExportBtn">导出全部订单信息</button>
+              <button class="btn secondary small" id="summaryRefreshBtn">刷新</button>
+              <button class="btn secondary small" id="openFactorySamplesBtn" type="button">面料样品</button>
+            </div>
           </div>
         </div>
         <div class="summary-stats" id="summaryStats"></div>
@@ -95,14 +99,16 @@
 
     <section id="page-analytics" class="page" role="tabpanel" aria-labelledby="tab-analytics" style="display:none">
       <article class="card analytics-card">
-        <div class="section-title">
-          <div>
-            <h2>数据分析</h2>
-            <p class="section-subtitle">按渠道分别统计收入、支出、利润和产品数据。独立站含税费，亚马逊独立核算。</p>
-          </div>
-          <div class="toolbar">
-            <button class="btn secondary small" id="analyticsResetBtn" type="button">重置筛选</button>
-            <button class="btn secondary small" id="analyticsRefreshBtn" type="button">刷新</button>
+        <div class="card-header">
+          <div class="section-title">
+            <div>
+              <h2>数据分析</h2>
+              <p class="section-subtitle">按渠道分别统计收入、支出、利润和产品数据。独立站含税费，亚马逊独立核算。</p>
+            </div>
+            <div class="toolbar">
+              <button class="btn secondary small" id="analyticsResetBtn" type="button">重置筛选</button>
+              <button class="btn secondary small" id="analyticsRefreshBtn" type="button">刷新</button>
+            </div>
           </div>
         </div>
 
@@ -200,11 +206,13 @@
 
     <section id="page-params" class="page" role="tabpanel" aria-labelledby="tab-params" style="display:none">
       <article class="card">
-        <div class="section-title">
-          <h2>参数设置</h2>
-          <div class="toolbar">
-            <button class="btn secondary small" id="refreshParamsBtn">刷新</button>
-            <button class="btn primary small" id="saveParamsBtn">保存参数</button>
+        <div class="card-header">
+          <div class="section-title">
+            <h2>参数设置</h2>
+            <div class="toolbar">
+              <button class="btn secondary small" id="refreshParamsBtn">刷新</button>
+              <button class="btn primary small" id="saveParamsBtn">保存参数</button>
+            </div>
           </div>
         </div>
         <div id="paramsSummary" class="notice">加载中...</div>
@@ -215,17 +223,19 @@
 
     <section id="page-users" class="page" role="tabpanel" aria-labelledby="tab-users" style="display:none">
       <article class="card users-card">
-        <div class="section-title">
-          <h2>用户管理</h2>
-          <div class="toolbar users-toolbar">
-            <label class="users-filter-label">渠道
-              <select id="userChannelFilter">
-                <option value="">全部渠道</option>
-                <option value="shopify">独立站</option>
-                <option value="amazon">亚马逊</option>
-              </select>
-            </label>
-            <button class="btn primary small" id="addUserBtn">新增用户</button>
+        <div class="card-header">
+          <div class="section-title">
+            <h2>用户管理</h2>
+            <div class="toolbar users-toolbar">
+              <label class="users-filter-label">渠道
+                <select id="userChannelFilter">
+                  <option value="">全部渠道</option>
+                  <option value="shopify">独立站</option>
+                  <option value="amazon">亚马逊</option>
+                </select>
+              </label>
+              <button class="btn primary small" id="addUserBtn">新增用户</button>
+            </div>
           </div>
         </div>
 

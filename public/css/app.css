@@ -251,28 +251,21 @@ nav button.active, .tab-nav button.active {
 
 /* ===== Card ===== */
 .card {
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--card);
+  border: 1px solid var(--line-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
   padding: 20px;
   position: relative;
-  transition: box-shadow .25s var(--ease), border-color .25s var(--ease);
 }
-.card::before { content: none }
-.card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: var(--glass-highlight);
-  clip-path: inset(0 round 12px);
-  pointer-events: none;
+.card::before, .card::after { content: none }
+.card-divider { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
+.card-header {
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line-light);
 }
-.card:hover { border-color: rgba(255,255,255,.9); box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,.04); transform: translateY(-1px) }
-.card-divider { border: 0; border-top: 1px solid var(--line); margin: 16px 0 }
+.card-content { padding-top: 0 }
 
 /* ===== Section Title ===== */
 .section-title {
@@ -288,6 +281,8 @@ nav button.active, .tab-nav button.active {
   display: inline-flex;
   align-items: center;
   gap: 9px;
+  padding-left: 10px;
+  border-left: 3px solid var(--brand);
 }
 .section-title h2::before { content: none }
 .section-title h3 { font-size: 14px }
@@ -323,12 +318,12 @@ nav button.active, .tab-nav button.active {
   background: var(--brand);
   border-color: var(--brand);
   color: #fff;
-  box-shadow: 0 1px 2px rgba(0,0,0,.15);
+  box-shadow: 0 1px 2px rgba(44,74,124,.2);
 }
 .btn.primary:hover {
   background: var(--brand-hover);
   border-color: var(--brand-hover);
-  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  box-shadow: 0 2px 8px rgba(44,74,124,.25);
 }
 .btn.secondary { background: var(--card) }
 .btn.danger { color: var(--bad); border-color: var(--bad-border); background: var(--bad-bg) }
@@ -387,7 +382,7 @@ input, select, textarea {
   color: var(--ink);
   font-size: 13px;
   box-shadow: none;
-  transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
 }
 textarea { min-height: 82px }
 input:hover, select:hover, textarea:hover { border-color: var(--border-hover) }
@@ -676,14 +671,14 @@ th, td {
 th {
   position: sticky;
   top: 0;
-  background: var(--surface-alt);
-  color: var(--ink);
+  background: var(--surface);
+  color: var(--muted);
   z-index: 1;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
-  border-bottom: 2px solid var(--line);
+  border-bottom: 1px solid var(--line-light);
   background-clip: padding-box;
 }
 table th:first-child, table td:first-child { position: sticky; left: 0; z-index: 2; background: inherit }
@@ -1035,14 +1030,13 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
 .preview-panel .metrics { grid-template-columns: repeat(4, minmax(120px,1fr)) }
 .metrics div {
   border: 1px solid var(--line-light);
-  background: rgba(255,255,255,.7);
+  background: var(--card);
   border-radius: var(--radius-lg);
   padding: 12px;
   min-height: 78px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
-  transition: border-color .15s var(--ease), transform .15s var(--ease), box-shadow .15s var(--ease);
+  box-shadow: var(--shadow);
 }
-.metrics div:hover { border-color: var(--border-hover); transform: translateY(-1px); box-shadow: var(--glass-highlight), 0 4px 12px rgba(0,0,0,.06) }
+.metrics div:hover { border-color: var(--border-hover) }
 .metrics label { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px }
 .metrics b { display: block; font-size: 18px; margin-top: 5px; color: var(--brand2); font-weight: 700; line-height: 1.2 }
 .preview-panel .metrics div:first-child,
@@ -1920,9 +1914,8 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
   border: 1px solid var(--line-light);
   border-radius: var(--radius-md);
   padding: 14px;
-  background: var(--glass-bg-strong);
-  box-shadow: var(--glass-highlight);
-  transition: border-color var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease);
+  background: var(--card);
+  box-shadow: var(--shadow);
 }
 .stat-card:hover {
   border-color: var(--border-hover);
@@ -2433,10 +2426,9 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
   min-height: 88px;
   border: 1px solid var(--line-light);
   border-radius: var(--radius-lg);
-  background: var(--glass-bg-strong);
+  background: var(--card);
   padding: 14px;
-  box-shadow: var(--glass-highlight);
-  transition: box-shadow var(--duration-normal) var(--ease), border-color var(--duration-normal) var(--ease);
+  box-shadow: var(--shadow);
 }
 .analytics-metric-card:hover {
   box-shadow: var(--shadow-md);
@@ -3049,7 +3041,7 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .topbar, .card, .modal-panel, .notify-panel, .tools-dropdown-menu {
+  .topbar, .modal-panel, .notify-panel, .tools-dropdown-menu {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }

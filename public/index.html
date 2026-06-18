@@ -48,8 +48,8 @@
     <section id="page-order" class="page active" role="tabpanel">
       <div class="grid">
         <article class="card col-12">
-          <div class="section-title"><h2>订单基础信息</h2></div>
-          <div class="order-info-layout compact-order">
+          <div class="card-header"><div class="section-title"><h2>订单基础信息</h2></div></div>
+          <div class="card-content order-info-layout compact-order">
             <div class="info-panel order-date-panel">
               <h3>日期</h3>
               <div class="form-grid compact one-col">
@@ -88,8 +88,8 @@
         </article>
 
         <article class="card col-12">
-          <div class="section-title"><h2>定制选项</h2></div>
-          <div class="custom-options-layout">
+          <div class="card-header"><div class="section-title"><h2>定制选项</h2></div></div>
+          <div class="card-content custom-options-layout">
             <div class="form-grid custom-options-form">
               <label class="custom-product-field">产品<select id="itemProduct"></select></label>
               <div class="input-row-4">
@@ -129,14 +129,18 @@
         </article>
 
         <article class="card col-12">
-          <div class="section-title">
-            <h2>当前订单项目</h2>
-            <div class="toolbar"><span class="pill" id="currentCount">0 项</span></div>
+          <div class="card-header">
+            <div class="section-title">
+              <h2>当前订单项目</h2>
+              <div class="toolbar"><span class="pill" id="currentCount">0 项</span></div>
+            </div>
           </div>
-          <div class="table-wrap"><table id="orderItemsTable"></table></div>
-          <div class="actions">
-            <button class="btn primary" id="saveOrderBtn">保存订单到数据库</button>
-            <button class="btn secondary" id="exportFactoryBtn">导出生产单</button>
+          <div class="card-content">
+            <div class="table-wrap"><table id="orderItemsTable"></table></div>
+            <div class="actions">
+              <button class="btn primary" id="saveOrderBtn">保存订单到数据库</button>
+              <button class="btn secondary" id="exportFactoryBtn">导出生产单</button>
+            </div>
           </div>
         </article>
       </div>
@@ -144,13 +148,15 @@
 
     <section id="page-orders" class="page" role="tabpanel" style="display:none">
       <article class="card">
-        <div class="section-title">
-          <h2>订单数据</h2>
-          <div class="toolbar">
-            <label class="btn secondary small file-pick" for="ordersImportCsvInput">导入订单CSV</label>
-            <input id="ordersImportCsvInput" class="hidden-file" type="file" accept=".csv">
-            <button class="btn secondary small" id="refreshOrdersBtn">刷新</button>
-            <button class="btn secondary small" id="openSamplesBtn" type="button">面料样品</button>
+        <div class="card-header">
+          <div class="section-title">
+            <h2>订单数据</h2>
+            <div class="toolbar">
+              <label class="btn secondary small file-pick" for="ordersImportCsvInput">导入订单CSV</label>
+              <input id="ordersImportCsvInput" class="hidden-file" type="file" accept=".csv">
+              <button class="btn secondary small" id="refreshOrdersBtn">刷新</button>
+              <button class="btn secondary small" id="openSamplesBtn" type="button">面料样品</button>
+            </div>
           </div>
         </div>
         <div id="ordersImportStatus" class="orders-import-hint" aria-live="polite">可通过 CSV 手动导入订单。建议先下载模板并按模板字段填写。</div>
@@ -348,10 +354,12 @@
           </div>
         </article>
         <article class="card col-12 product-editor">
-          <div class="section-title product-editor-title">
-            <h2>产品基础信息</h2>
+          <div class="card-header">
+            <div class="section-title product-editor-title">
+              <h2>产品基础信息</h2>
+            </div>
           </div>
-          <div class="form-grid">
+          <div class="card-content form-grid">
             <label>产品名称<input id="editName"></label>
             <label>默认主面料<select id="editDefaultFabric"></select></label>
             <label>基础价 USD<input id="editBasePrice" type="number" step="0.01"></label>
@@ -368,14 +376,16 @@
 
     <section id="page-analytics" class="page" role="tabpanel" style="display:none">
       <article class="card analytics-card">
-        <div class="section-title">
-          <div>
-            <h2>数据分析</h2>
-            <p class="section-subtitle">按渠道分别统计收入、支出、利润和产品数据。</p>
-          </div>
-          <div class="toolbar">
-            <button class="btn secondary small" id="analyticsResetBtn" type="button">重置筛选</button>
-            <button class="btn secondary small" id="analyticsRefreshBtn" type="button">刷新</button>
+        <div class="card-header">
+          <div class="section-title">
+            <div>
+              <h2>数据分析</h2>
+              <p class="section-subtitle">按渠道分别统计收入、支出、利润和产品数据。</p>
+            </div>
+            <div class="toolbar">
+              <button class="btn secondary small" id="analyticsResetBtn" type="button">重置筛选</button>
+              <button class="btn secondary small" id="analyticsRefreshBtn" type="button">刷新</button>
+            </div>
           </div>
         </div>
 
@@ -482,17 +492,21 @@
 
     <section id="page-tax" class="page" role="tabpanel" style="display:none">
       <article class="card">
-        <div class="section-title">
-          <h2>各州税率</h2>
-          <div class="toolbar">
-            <button class="btn primary small" id="saveTaxRatesBtn">保存</button>
+        <div class="card-header">
+          <div class="section-title">
+            <h2>各州税率</h2>
+            <div class="toolbar">
+              <button class="btn primary small" id="saveTaxRatesBtn">保存</button>
+            </div>
           </div>
         </div>
-        <div class="table-wrap">
-          <table id="taxRatesTable">
-            <thead><tr><th style="width:120px">州代码</th><th>州名称</th><th style="width:160px">税率 %</th></tr></thead>
-            <tbody id="taxRatesBody"></tbody>
-          </table>
+        <div class="card-content">
+          <div class="table-wrap">
+            <table id="taxRatesTable">
+              <thead><tr><th style="width:120px">州代码</th><th>州名称</th><th style="width:160px">税率 %</th></tr></thead>
+              <tbody id="taxRatesBody"></tbody>
+            </table>
+          </div>
         </div>
       </article>
     </section>
