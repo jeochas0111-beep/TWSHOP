@@ -43,7 +43,7 @@ function orderChannel(v) {
   return String(v || '').toLowerCase() === 'amazon' ? 'amazon' : 'shopify';
 }
 
-const VALID_TABLES = new Set(["globals", "fabrics", "linings", "products", "product_width_prices", "product_length_prices", "product_option_groups", "product_option_values", "labor_rules", "memory_rules", "tax_rates", "orders", "order_items", "factory_feedback", "backups"]);
+const VALID_TABLES = new Set(["globals", "fabrics", "linings", "products", "product_width_prices", "product_length_prices", "product_option_groups", "product_option_values", "product_archive", "labor_rules", "memory_rules", "tax_rates", "orders", "order_items", "factory_feedback", "backups", "users", "sample_sales"]);
 
 function tableAll(name, order = "id") {
   if (!VALID_TABLES.has(name) || !/^[a-zA-Z0-9_,]+$/.test(order)) throw new Error("Invalid table or order");

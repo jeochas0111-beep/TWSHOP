@@ -2890,12 +2890,10 @@ function saveTaxRates() {
     rate: parseFloat(tr.querySelector('.tax-rate')?.value) || 0,
     note: ''
   })).filter(r => r.code);
-  fetch('/api/tax-rates', {
+  api.json('/api/tax-rates', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ rates: rows })
-  }).then(r => r.json()).then(res => {
-    if (res.ok === false) throw new Error(res.error || '保存失败');
+  }).then(res => {
     state.taxRates = rows;
     toast('税率已保存');
   }).catch(e => toast(e.message, 'bad'));
@@ -2939,7 +2937,6 @@ function renderNotifyPanel() {
     if (total > 0) { countEl.textContent = total + ' 项待处理'; countEl.classList.remove('hidden'); }
     else countEl.classList.add('hidden');
   }
-  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   let html = '';
   if (logistics.length) {
     html += `<div class="notify-section"><div class="notify-section-header"><span class="notify-section-dot warn"></span><h4>物流成本（${logistics.length}）</h4></div>`;
@@ -3407,7 +3404,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch {
       localStorage.removeItem('twodrapes_token');
       localStorage.removeItem('twodrapes_user');
-      if (location.port !== '8083') window.location.href = '//' + location.hostname + ':8083/';
+      if (location.pathname !== '/login.html') window.location.href = '/login.html';
       return;
     }
   }

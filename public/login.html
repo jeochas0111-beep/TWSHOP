@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -70,6 +70,8 @@
       min-height: 20px;
     }
   </style>
+  <link rel="stylesheet" href="/css/twodrapes-theme.css">
+  <script src="/js/channel-theme.js"></script>
 </head>
 <body>
   <main>
@@ -94,19 +96,15 @@
   <script>
     (function () {
       const port = location.port;
-      const isLoginPort = port === '8083';
       const isManagement = port === '8081';
       const isAmazon = port === '8082';
       const channel = isAmazon ? 'amazon' : 'shopify';
 
       const channelNames = { shopify: '独立站端', amazon: '亚马逊端' };
-      const labels = { shopify: '独立站端', amazon: '亚马逊端', login: 'Twodrapes', management: '管理端' };
+      const labels = { shopify: '独立站端', amazon: '亚马逊端', management: '管理端' };
 
       // Title and label
-      if (isLoginPort) {
-        document.getElementById('channelLabel').textContent = '登录';
-        document.title = 'Twodrapes — 登录';
-      } else if (isManagement) {
+      if (isManagement) {
         document.getElementById('channelLabel').textContent = labels.management + ' — 登录';
         document.title = 'Twodrapes — ' + labels.management + ' — 登录';
       } else {
@@ -114,8 +112,8 @@
         document.title = 'Twodrapes — ' + labels[channel] + ' — 登录';
       }
 
-      // Login port (8083) and management port (8081): show channel selector
-      if (isLoginPort || isManagement) {
+      // Management port (8081): show channel selector
+      if (isManagement) {
         document.getElementById('channelSelectLabel').style.display = '';
         document.getElementById('channelSelect').style.display = '';
       }
@@ -137,8 +135,8 @@
             return;
           }
           const userChannel = d.user.channel;
-          if (isLoginPort || isManagement) {
-            // 登录端/管理端: redirect to the user's channel port
+          if (isManagement) {
+            // 管理端: redirect to the user's channel port
             const targetPort = channelPorts[userChannel];
             if (targetPort) {
               location.href = '//' + location.hostname + ':' + targetPort + '/';
@@ -164,10 +162,10 @@
         try {
           const username = document.getElementById('username').value;
           const password = document.getElementById('password').value;
-          const loginChannel = (isLoginPort || isManagement) ? document.getElementById('channelSelect').value : channel;
+          const loginChannel = isManagement ? document.getElementById('channelSelect').value : channel;
 
           const url = '/api/auth/login';
-          const body = (isLoginPort || isManagement)
+          const body = isManagement
             ? { channel: loginChannel, username, password }
             : { username, password };
 
@@ -180,8 +178,8 @@
           if (data.ok) {
             localStorage.setItem('twodrapes_token', data.token);
             localStorage.setItem('twodrapes_user', JSON.stringify(data.user));
-            if (isLoginPort || isManagement) {
-              // 登录端/管理端: redirect to the user's channel port
+            if (isManagement) {
+              // 管理端: redirect to the user's channel port
               const targetPort = channelPorts[data.user.channel];
               if (targetPort) {
                 location.href = '//' + location.hostname + ':' + targetPort + '/';

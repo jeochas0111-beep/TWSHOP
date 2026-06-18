@@ -19,6 +19,7 @@ const EXPORT_TABLES = [
   'product_length_prices',
   'product_option_groups',
   'product_option_values',
+  'product_archive',
   'labor_rules',
   'memory_rules',
   'tax_rates',

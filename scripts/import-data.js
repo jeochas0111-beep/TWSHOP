@@ -41,6 +41,7 @@ const IMPORT_ORDER = [
   'product_length_prices',
   'product_option_groups',
   'product_option_values',
+  'product_archive',
   'users',
   'orders',
   'order_items',
