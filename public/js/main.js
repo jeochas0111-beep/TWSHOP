@@ -654,6 +654,17 @@ async function viewOrderModal(orderId, mode) {
     const originalHasScreenshot = !!order.delivery_screenshot;
     $('editOrderTitle').textContent = (isEdit ? '编辑' : '查看') + '订单 ' + esc(order.order_no || '#' + order.id);
 
+    // Header description
+    const descParts = [esc(order.order_no || '#' + order.id), CHANNEL_LABEL];
+    if (order.order_date) descParts.push(order.order_date);
+    $('editOrderDesc').textContent = descParts.join(' · ');
+
+    // Status badge
+    const statusInfo = orderStatusInfo(order);
+    const badge = $('editOrderStatusBadge');
+    badge.textContent = statusInfo.label;
+    badge.className = 'order-status ' + statusInfo.cls;
+
     const field = (label, value, inputType, fieldName) => {
       if (!isEdit) return `<div><label>${label}<span class="detail-value">${esc(String(value || ''))}</span></label></div>`;
       if (inputType === 'textarea') return `<div><label>${label}<textarea rows="2" data-edit-field="${fieldName}">${esc(value || '')}</textarea></label></div>`;
@@ -692,10 +703,13 @@ async function viewOrderModal(orderId, mode) {
       '</div></div>' +
       '</div></div>' +
       (isEdit ? orderLevelDiscountHtml(order) : '') +
-      orderItemModulesHtml(order, isEdit) +
-      (isEdit
-        ? '<div class="actions"><button class="btn primary small" type="button" data-save-order-edit="' + order.id + '">保存修改</button></div>'
-        : '<div class="actions"><button class="btn primary small" type="button" data-switch-to-edit="' + order.id + '">编辑</button></div>');
+      orderItemModulesHtml(order, isEdit);
+
+    // Footer action buttons
+    const footer = $('editOrderFooter');
+    footer.innerHTML = isEdit
+      ? '<button class="btn secondary small" type="button" data-cancel-edit="' + order.id + '">取消</button><button class="btn primary small" type="button" data-save-order-edit="' + order.id + '">保存修改</button>'
+      : '<button class="btn primary small" type="button" data-switch-to-edit="' + order.id + '">编辑订单</button>';
 
     $('editOrderModal').classList.remove('hidden');
 
@@ -741,8 +755,12 @@ async function viewOrderModal(orderId, mode) {
     }
 
     if (isEdit) {
+      // Cancel button — switch back to view mode
+      const cancelBtn = $('editOrderFooter').querySelector('[data-cancel-edit]');
+      if (cancelBtn) cancelBtn.onclick = () => viewOrderModal(orderId, 'view');
+
       // Save order
-      form.querySelector('[data-save-order-edit="' + order.id + '"]').addEventListener('click', async (event) => {
+      $('editOrderFooter').querySelector('[data-save-order-edit="' + order.id + '"]').addEventListener('click', async (event) => {
         event.preventDefault();
         event.stopPropagation();
         const fields = form.querySelectorAll('[data-edit-field]');
@@ -782,8 +800,8 @@ async function viewOrderModal(orderId, mode) {
         } catch (e) { toast(e.message, 'bad'); }
       });
     } else {
-      // View mode: bind edit button
-      const editBtn = form.querySelector('[data-switch-to-edit]');
+      // View mode: bind edit button (now in footer)
+      const editBtn = $('editOrderFooter').querySelector('[data-switch-to-edit]');
       if (editBtn) editBtn.onclick = () => viewOrderModal(orderId, 'edit');
     }
 

@@ -809,6 +809,21 @@ async function viewOrderModal(orderId) {
     const content = $("orderDetailContent");
     if (!title || !content) return;
     title.textContent = "订单 " + esc(order.order_no || "#" + order.id);
+
+    // Header description
+    const descParts = [esc(order.order_no || "#" + order.id)];
+    if (order.channel) descParts.push(channelLabel(order.channel));
+    if (order.order_date) descParts.push(order.order_date);
+    const descEl = $("orderDetailDesc");
+    if (descEl) descEl.textContent = descParts.join(" · ");
+
+    // Status badge
+    const badge = $("orderDetailStatusBadge");
+    if (badge) {
+      badge.textContent = orderStatusLabel(order.status);
+      badge.className = "order-status " + orderStatusCls(order.status);
+    }
+
     const logisticsCost = Number(order.logistics_cost_rmb) || 0;
     const field = (label, value) => `<div><label>${label}<span class="detail-value">${esc(String(value || ""))}</span></label></div>`;
     content.innerHTML =
@@ -844,8 +859,14 @@ async function viewOrderModal(orderId) {
       '<div class="reminder-form">' +
       '<label class="checkline"><input type="checkbox" id="orderReminderToggle" ' + (order.reminder ? 'checked' : '') + '> 标记为需要更新</label>' +
       '<textarea id="orderReminderText" rows="2" placeholder="提醒内容（可选）">' + esc(order.reminder_text || '') + '</textarea>' +
-      '<button class="btn small secondary" id="saveReminderBtn">保存提醒</button>' +
       '</div></div>';
+
+    // Footer — reminder save button
+    const footer = $("orderDetailFooter");
+    if (footer) {
+      footer.innerHTML = '<button class="btn primary small" id="saveReminderBtn" type="button">保存提醒</button>';
+    }
+
     $("orderDetailModal").classList.remove("hidden");
     $("saveReminderBtn").onclick = async () => {
       const reminder = $("orderReminderToggle").checked ? 1 : 0;

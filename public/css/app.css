@@ -1600,14 +1600,14 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
 .item-options-list li:last-child { border-bottom: none }
 .opt-label { color: var(--muted); min-width: 80px }
 .opt-value { color: var(--ink); font-weight: 500 }
-.item-group-card { border: 1px solid var(--line); border-radius: var(--radius-md); margin-bottom: 10px; background: var(--card); overflow: hidden }
+.item-group-card { border: 1px solid rgba(0,0,0,.06); border-radius: var(--radius-lg); margin-bottom: 10px; background: rgba(255,255,255,.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); overflow: hidden }
 .item-group-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  background: rgba(0,0,0,.02);
+  border-bottom: 1px solid rgba(0,0,0,.05);
 }
 .item-group-name { font-size: 14px; font-weight: 600; color: var(--ink) }
 .item-group-count { font-size: 12px; color: var(--muted) }
@@ -1617,7 +1617,7 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
   gap: 10px;
   padding: 10px 16px;
   font-size: 13px;
-  border-bottom: 1px solid var(--line-light);
+  border-bottom: 1px solid rgba(0,0,0,.04);
 }
 .item-group-row:last-child { border-bottom: none }
 .item-row-main { display: flex; align-items: center; gap: 10px; min-width: 0 }
@@ -1686,6 +1686,7 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
 .order-status.good { color: var(--good); background: var(--good-bg); border-color: var(--good-border) }
 .order-status.warn { color: var(--warn); background: var(--warn-bg); border-color: var(--warn-border) }
 .order-status.bad { color: var(--bad); background: var(--bad-bg); border-color: var(--bad-border) }
+.order-status.ship { color: var(--brand-hover); background: var(--brand-light); border-color: var(--accent-border) }
 .order-status.muted { color: var(--muted); background: var(--surface); border-color: var(--line-light) }
 .order-status-select {
   width: auto;
@@ -1925,14 +1926,15 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
   position: relative;
   width: min(100%, 920px);
   max-height: 88vh;
-  overflow: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: var(--glass-bg-strong);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg), var(--glass-highlight);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
-  padding: 24px;
   animation: modalIn .28s var(--ease);
 }
 @keyframes modalIn {
@@ -1940,28 +1942,103 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
   to { opacity: 1; transform: translateY(0) scale(1) }
 }
 .edit-order-modal-panel { width: min(100%, 920px) }
-.quote-modal-panel { max-width: 700px }
+.quote-modal-panel { max-width: 700px; overflow: auto; padding: 24px }
+
+/* Modal Header */
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  background: rgba(255,255,255,.4);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  flex-shrink: 0;
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.modal-header-desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.modal-close-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,.08);
+  background: rgba(255,255,255,.75);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s var(--ease);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  flex-shrink: 0;
+}
+.modal-close-btn:hover { background: #fff; color: var(--ink); box-shadow: var(--shadow) }
+.modal-close-btn:active { transform: scale(.92) }
+
+/* Modal Body — scrollable content zone */
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  overscroll-behavior: contain;
+}
+
+/* Modal Footer — fixed action bar */
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid rgba(0,0,0,.06);
+  background: rgba(255,255,255,.4);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  flex-shrink: 0;
+}
+.modal-footer:empty { display: none }
 
 /* Edit Order Modal */
-.edit-order-form .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
-.edit-order-form .detail-grid > div {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--card);
-  padding: 12px;
+.modal-body .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px }
+.modal-body .detail-grid > div {
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: var(--radius-lg);
+  background: rgba(255,255,255,.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 14px;
 }
-.edit-order-form .detail-grid label { text-transform: none; letter-spacing: 0; font-size: 12px }
-.edit-order-form .detail-grid input,
-.edit-order-form .detail-grid textarea {
+.modal-body .detail-grid label { text-transform: none; letter-spacing: 0; font-size: 12px }
+.modal-body .detail-grid input,
+.modal-body .detail-grid textarea {
   min-height: 36px;
   padding: 6px 10px;
   font-size: 13px;
   border-radius: var(--radius-sm);
 }
-.edit-order-form .detail-grid textarea { min-height: 52px; resize: vertical }
-.edit-order-form .order-options-detail { margin-top: 16px }
-.edit-order-form .order-options-detail h4 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--ink) }
-.edit-order-form .detail-table table { min-width: 600px }
+.modal-body .detail-grid textarea { min-height: 52px; resize: vertical }
+.modal-body .order-options-detail { margin-top: 16px }
+.modal-body .order-options-detail h4 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--ink) }
+.modal-body .detail-table table { min-width: 600px }
 .order-level-discount { border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--card); padding: 12px; margin-top: 8px }
 .order-actual-paid-row { margin-top: 10px; display: flex; flex-direction: column; gap: 4px }
 .order-actual-paid-row label { display: grid; gap: 4px; color: var(--muted); font-size: 12px; font-weight: 700 }
@@ -3343,6 +3420,10 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
   .compact-order .order-main-panel .form-grid .wide { grid-column: auto }
   .product-data-tools label, .product-data-tools .btn { flex: 1 1 100% }
   .modal:not(.hidden) { padding: 10px }
+  .modal-header { padding: 16px 16px 12px }
+  .modal-body { padding: 16px }
+  .modal-footer { padding: 12px 16px; flex-direction: column }
+  .modal-footer .btn { width: 100% }
   .notify-wrap { align-self: flex-start }
   .notify-panel { left: 0; right: auto; width: calc(100vw - 20px) }
   .orders-filter-panel { grid-template-columns: 1fr; gap: 8px }
@@ -3419,7 +3500,8 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .topbar, .card, .modal-panel, .notify-panel, .tools-dropdown-menu, .order-action-menu,
+  .topbar, .card, .modal-panel, .modal-header, .modal-footer, .modal-close-btn,
+  .notify-panel, .tools-dropdown-menu, .order-action-menu,
   .orders-filter-panel, .analytics-filters, .analytics-metric-card, .analytics-panel,
   .channel-section, nav, .tab-nav, .btn.secondary, .period-bar, .order-date-panel {
     backdrop-filter: none;
@@ -3458,6 +3540,9 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
 @supports not (backdrop-filter: blur(1px)) {
   .card { background: rgba(255,255,255,.95) }
   .modal-panel { background: rgba(255,255,255,.97) }
+  .modal-header, .modal-footer { background: rgba(255,255,255,.85); backdrop-filter: none; -webkit-backdrop-filter: none }
+  .modal-close-btn { background: rgba(255,255,255,.9); backdrop-filter: none; -webkit-backdrop-filter: none }
+  .item-group-card, .modal-body .detail-grid > div { background: rgba(255,255,255,.9); backdrop-filter: none; -webkit-backdrop-filter: none }
   .notify-panel { background: rgba(255,255,255,.97) }
   .tools-dropdown-menu { background: rgba(255,255,255,.97) }
   .order-action-menu { background: rgba(255,255,255,.97) }
