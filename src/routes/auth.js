@@ -1,11 +1,13 @@
 const express = require('express');
 const { db } = require('../db');
 const { now } = require('../utils/helpers');
-const { hashPassword, verifyPassword, signJwt, generateSecret } = require('../utils/auth');
+const { hashPassword, verifyPassword, signJwt, generateSecret, verifyJwt } = require('../utils/auth');
 const appConfig = require('../config');
 const { requireAdmin } = require('../utils/api');
 
 const loginAttempts = new Map();
+const CHANNEL_PORTS = { shopify: '8080', amazon: '8082', management: '8081' };
+const ALL_CHANNELS = ['shopify', 'amazon'];
 
 function loginRateLimit(req, res, next) {
   const key = req.ip || req.socket?.remoteAddress || 'local';
@@ -31,6 +33,185 @@ function loginRateLimit(req, res, next) {
   next();
 }
 
+function formatUser(user) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    username: user.username,
+    display_name: user.display_name || user.username,
+    role: user.role,
+    channel: user.channel
+  };
+}
+
+function localUser(channel = null) {
+  return {
+    id: 0,
+    username: 'local',
+    display_name: '本地用户',
+    role: 'admin',
+    channel
+  };
+}
+
+function extractToken(req) {
+  const authHeader = req.headers.authorization || '';
+  if (authHeader.startsWith('Bearer ')) return authHeader.slice(7);
+  return req.body?.token || req.query?.token || '';
+}
+
+function getUserById(id) {
+  return db.prepare('SELECT id,channel,username,display_name,role,enabled,password_hash,salt,created_at,updated_at FROM users WHERE id = ?').get(id);
+}
+
+function loadCurrentUser(req, options = {}) {
+  const cfg = appConfig.authConfig();
+  const { expectedChannel = null } = options;
+
+  if (cfg.noAuth) {
+    if (expectedChannel === 'management') return { ok: true, user: localUser(null) };
+    return { ok: true, user: localUser(expectedChannel || null) };
+  }
+
+  const token = extractToken(req);
+  if (!token) {
+    return { ok: false, status: 401, error: '未登录' };
+  }
+
+  const payload = verifyJwt(token, generateSecret());
+  if (!payload?.sub) {
+    return { ok: false, status: 401, error: '登录已过期' };
+  }
+
+  const user = getUserById(payload.sub);
+  if (!user || Number(user.enabled) === 0) {
+    return { ok: false, status: 401, error: '账号不可用' };
+  }
+
+  if (expectedChannel === 'management') {
+    if (user.role !== 'admin') {
+      return { ok: false, status: 403, error: '当前账号不能访问管理端' };
+    }
+  } else if (expectedChannel && user.channel !== expectedChannel) {
+    return { ok: false, status: 403, error: '当前账号与访问端不匹配' };
+  }
+
+  return { ok: true, user };
+}
+
+function getAccessibleChannels(user) {
+  if (!user) return [];
+  return user.role === 'admin' ? ALL_CHANNELS.slice() : ALL_CHANNELS.filter((channel) => channel === user.channel);
+}
+
+function issueToken(user) {
+  const cfg = appConfig.authConfig();
+  return signJwt(
+    {
+      sub: user.id,
+      username: user.username,
+      channel: user.channel,
+      role: user.role,
+      display_name: user.display_name || user.username
+    },
+    generateSecret(),
+    cfg.jwtExpiresIn
+  );
+}
+
+function attachCommonAuthRoutes(router, mode) {
+  const expectedChannel = mode === 'management' ? 'management' : mode;
+
+  router.post('/verify', (req, res) => {
+    try {
+      const requestedChannel = mode === 'management' ? (req.body?.channel || null) : expectedChannel;
+      const auth = loadCurrentUser(req, { expectedChannel: requestedChannel });
+      if (!auth.ok) return res.json({ ok: false });
+      res.json({ ok: true, user: formatUser(auth.user) });
+    } catch {
+      res.json({ ok: false });
+    }
+  });
+
+  router.get('/channels', (req, res) => {
+    try {
+      const auth = loadCurrentUser(req, { expectedChannel: mode === 'management' ? null : expectedChannel });
+      if (!auth.ok) {
+        return res.status(auth.status || 401).json({ ok: false, error: auth.error || '未登录' });
+      }
+      const channels = getAccessibleChannels(auth.user);
+      res.json({ ok: true, channels, channelPorts: CHANNEL_PORTS });
+    } catch (e) {
+      console.error('[AUTH] channels error:', e);
+      res.status(500).json({ ok: false, error: '服务器错误' });
+    }
+  });
+
+  router.get('/me', (req, res) => {
+    try {
+      const auth = loadCurrentUser(req, { expectedChannel });
+      if (!auth.ok) {
+        return res.status(auth.status || 401).json({ ok: false, error: auth.error || '未登录' });
+      }
+      res.json({ ok: true, user: formatUser(auth.user) });
+    } catch (e) {
+      console.error('[AUTH] me error:', e);
+      res.status(500).json({ ok: false, error: '服务器内部错误' });
+    }
+  });
+
+  router.put('/me', (req, res) => {
+    try {
+      if (appConfig.authConfig().noAuth) {
+        return res.status(400).json({ ok: false, error: '免登录模式下不可修改个人信息' });
+      }
+      const auth = loadCurrentUser(req, { expectedChannel });
+      if (!auth.ok) {
+        return res.status(auth.status || 401).json({ ok: false, error: auth.error || '未登录' });
+      }
+      const displayName = String(req.body?.display_name || '').trim();
+      if (!displayName) {
+        return res.status(400).json({ ok: false, error: '显示名不能为空' });
+      }
+      db.prepare('UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?').run(displayName, now(), auth.user.id);
+      const updated = getUserById(auth.user.id);
+      res.json({ ok: true, user: formatUser(updated) });
+    } catch (e) {
+      console.error('[AUTH] update me error:', e);
+      res.status(500).json({ ok: false, error: '服务器内部错误' });
+    }
+  });
+
+  router.post('/change-password', (req, res) => {
+    try {
+      if (appConfig.authConfig().noAuth) {
+        return res.status(400).json({ ok: false, error: '免登录模式下不可修改密码' });
+      }
+      const auth = loadCurrentUser(req, { expectedChannel });
+      if (!auth.ok) {
+        return res.status(auth.status || 401).json({ ok: false, error: auth.error || '未登录' });
+      }
+      const currentPassword = String(req.body?.currentPassword || '');
+      const newPassword = String(req.body?.newPassword || '');
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ ok: false, error: '请输入当前密码和新密码' });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ ok: false, error: '密码长度不能少于 6 个字符' });
+      }
+      if (!verifyPassword(currentPassword, auth.user.password_hash, auth.user.salt)) {
+        return res.status(400).json({ ok: false, error: '当前密码不正确' });
+      }
+      const { hash, salt } = hashPassword(newPassword);
+      db.prepare('UPDATE users SET password_hash = ?, salt = ?, updated_at = ? WHERE id = ?').run(hash, salt, now(), auth.user.id);
+      res.json({ ok: true });
+    } catch (e) {
+      console.error('[AUTH] change password error:', e);
+      res.status(500).json({ ok: false, error: '服务器内部错误' });
+    }
+  });
+}
+
 function authRoutes(channel) {
   const router = express.Router();
 
@@ -44,33 +225,15 @@ function authRoutes(channel) {
       if (!user || !verifyPassword(password, user.password_hash, user.salt)) {
         return res.status(401).json({ ok: false, error: '用户名或密码错误' });
       }
-      const cfg = appConfig.authConfig();
-      const token = signJwt(
-        { sub: user.id, username: user.username, channel: user.channel, role: user.role, display_name: user.display_name },
-        generateSecret(),
-        cfg.jwtExpiresIn
-      );
-      res.json({ ok: true, token, user: { id: user.id, username: user.username, display_name: user.display_name, role: user.role, channel: user.channel } });
+      const token = issueToken(user);
+      res.json({ ok: true, token, user: formatUser(user) });
     } catch (e) {
       console.error('[AUTH] login error:', e);
       res.status(500).json({ ok: false, error: '服务器内部错误' });
     }
   });
 
-  router.post('/verify', (req, res) => {
-    try {
-      if (appConfig.authConfig().noAuth) {
-        return res.json({ ok: true, user: { id: 0, username: 'local', display_name: '本地用户', role: 'admin', channel } });
-      }
-      const token = req.body?.token || (req.headers.authorization || '').slice(7);
-      if (!token) return res.json({ ok: false });
-      const payload = require('../utils/auth').verifyJwt(token, generateSecret());
-      if (!payload || payload.channel !== channel) return res.json({ ok: false });
-      res.json({ ok: true, user: { id: payload.sub, username: payload.username, display_name: payload.display_name, role: payload.role, channel: payload.channel } });
-    } catch {
-      res.json({ ok: false });
-    }
-  });
+  attachCommonAuthRoutes(router, channel);
 
   return router;
 }
@@ -91,35 +254,15 @@ function managementAuthRoutes() {
       if (!user || !verifyPassword(password, user.password_hash, user.salt)) {
         return res.status(401).json({ ok: false, error: '用户名或密码错误' });
       }
-      const cfg = appConfig.authConfig();
-      const token = signJwt(
-        { sub: user.id, username: user.username, channel: user.channel, role: user.role, display_name: user.display_name },
-        generateSecret(),
-        cfg.jwtExpiresIn
-      );
-      res.json({ ok: true, token, user: { id: user.id, username: user.username, display_name: user.display_name, role: user.role, channel: user.channel } });
+      const token = issueToken(user);
+      res.json({ ok: true, token, user: formatUser(user) });
     } catch (e) {
       console.error('[AUTH] management login error:', e);
       res.status(500).json({ ok: false, error: '服务器内部错误' });
     }
   });
 
-  router.post('/verify', (req, res) => {
-    try {
-      if (appConfig.authConfig().noAuth) {
-        return res.json({ ok: true, user: { id: 0, username: 'local', display_name: '本地用户', role: 'admin', channel: null } });
-      }
-      const token = req.body?.token || (req.headers.authorization || '').slice(7);
-      const requestedChannel = req.body?.channel;
-      if (!token) return res.json({ ok: false });
-      const payload = require('../utils/auth').verifyJwt(token, generateSecret());
-      if (!payload) return res.json({ ok: false });
-      if (requestedChannel && payload.channel !== requestedChannel) return res.json({ ok: false });
-      res.json({ ok: true, user: { id: payload.sub, username: payload.username, display_name: payload.display_name, role: payload.role, channel: payload.channel } });
-    } catch {
-      res.json({ ok: false });
-    }
-  });
+  attachCommonAuthRoutes(router, 'management');
 
   return router;
 }
@@ -178,7 +321,7 @@ function userRoutes() {
     try {
       const { id } = req.params;
       const { username, display_name, role, enabled, password } = req.body || {};
-      const user = db.prepare('SELECT id,username FROM users WHERE id = ?').get(id);
+      const user = db.prepare('SELECT id,username,display_name FROM users WHERE id = ?').get(id);
       if (!user) return res.status(404).json({ ok: false, error: '用户不存在' });
       if (password && password.length < 6) {
         return res.status(400).json({ ok: false, error: '密码长度不能少于 6 个字符' });

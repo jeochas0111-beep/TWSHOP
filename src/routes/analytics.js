@@ -224,6 +224,28 @@ router.get('/analytics/overview', route((req, res) => {
   };
   const sampleMonthlyTrend = Array.from(sampleMonthlyMap.values()).sort((a, b) => a.month < b.month ? -1 : 1);
 
+  // Logistics analysis
+  const logisticsAnalysis = { totalCostRmb: 0, avgCostRmb: 0, avgWeightKg: 0, orderCount: 0, byCarrier: [] };
+  const carrierMap = new Map();
+  for (const order of orders) {
+    const cost = num(order.logistics_cost_rmb);
+    const weight = num(order.weight_kg);
+    const carrier = String(order.delivery_channel || order.logistics_provider || '').trim() || '未填写';
+    logisticsAnalysis.totalCostRmb += cost;
+    if (weight > 0) { logisticsAnalysis.avgWeightKg += weight; logisticsAnalysis.orderCount += 1; }
+    if (!carrierMap.has(carrier)) carrierMap.set(carrier, { carrier, orderCount: 0, totalWeight: 0, totalCostRmb: 0 });
+    const entry = carrierMap.get(carrier);
+    entry.orderCount += 1;
+    entry.totalWeight += weight;
+    entry.totalCostRmb += cost;
+  }
+  if (logisticsAnalysis.orderCount > 0) logisticsAnalysis.avgWeightKg /= logisticsAnalysis.orderCount;
+  const logisticsOrderCount = orders.filter(o => num(o.logistics_cost_rmb) > 0).length;
+  logisticsAnalysis.avgCostRmb = logisticsOrderCount > 0 ? logisticsAnalysis.totalCostRmb / logisticsOrderCount : 0;
+  logisticsAnalysis.byCarrier = Array.from(carrierMap.values())
+    .map(c => ({ ...c, avgWeightKg: c.orderCount > 0 ? c.totalWeight / c.orderCount : 0, avgCostRmb: c.orderCount > 0 ? c.totalCostRmb / c.orderCount : 0 }))
+    .sort((a, b) => b.totalCostRmb - a.totalCostRmb);
+
   res.json({
     filters: {
       dateFrom: req.query.date_from || '',
@@ -238,7 +260,8 @@ router.get('/analytics/overview', route((req, res) => {
     productComparison,
     channelComparison: Array.from(channelMap.values()).map(publicTotals),
     sampleSummary,
-    sampleMonthlyTrend
+    sampleMonthlyTrend,
+    logisticsAnalysis
   });
 }));
 

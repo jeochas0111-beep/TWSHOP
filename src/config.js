@@ -31,7 +31,7 @@ function rateConfig() {
 }
 
 function authDisabled() {
-  return process.env.NO_AUTH !== '0' && process.env.NO_AUTH !== 'false';
+  return process.env.NO_AUTH === '1' || process.env.NO_AUTH === 'true';
 }
 
 // Feature switches for unfinished or temporarily hidden modules.
@@ -41,7 +41,7 @@ function authDisabled() {
 // 1. Change shopifyIntegrationEnabled to true.
 // 2. Restart the server.
 // 3. Configure Shopify domain and Admin API token in the UI.
-// Auth is disabled by default for local use; set NO_AUTH=0 to require login.
+// Auth is enabled by default. Set NO_AUTH=1 or NO_AUTH=true to bypass login locally.
 function authConfig() {
   return {
     noAuth: authDisabled(),

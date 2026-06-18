@@ -26,7 +26,7 @@ async function json(url, options = {}) {
     window.location.href = "/login.html";
     throw new Error("未授权");
   }
-  if (!res.ok || data.ok === false) throw new Error(data.error || res.statusText);
+  if (!res.ok || (data.ok === false && !options.allowFalse)) throw new Error(data.error || res.statusText);
   return data;
 }
 
@@ -802,6 +802,40 @@ function orderItemModulesHtml(order) {
   return groupsHtml;
 }
 
+function orderFinancialSummaryHtml(order) {
+  const profit = Number(order.total_profit_rmb) || 0;
+  const profitRate = Number(order.total_profit_rate) || 0;
+  const totalCost = Number(order.total_cost_rmb) || 0;
+  const productionCost = order.production_cost_override_rmb != null
+    ? Number(order.production_cost_override_rmb)
+    : (order.items || []).reduce((sum, item) => sum + (Number(item.final_cost_rmb) || 0), 0);
+  const rows = [
+    ["订单销售额", usd(order.total_sales_usd), "strong"],
+    ["税费", usd(order.total_tax_usd), ""],
+    ["净销售 RMB", rmb(order.total_net_sales_rmb), ""],
+    ["生产成本 RMB", rmb(productionCost), ""],
+    ["物流成本 RMB", rmb(order.logistics_cost_rmb), ""],
+    ["总成本 RMB", rmb(totalCost), ""],
+    ["利润 RMB", rmb(profit), profit < 0 ? "bad strong" : "good strong"],
+    ["利润率", `${fmt(profitRate * 100, 1)}%`, profitRate < 0 ? "bad strong" : "good strong"]
+  ];
+  if (Number(order.paypal_fee_usd) > 0) rows.splice(3, 0, ["PayPal 手续费", usd(order.paypal_fee_usd), ""]);
+  if (Number(order.actual_income_usd) > 0) rows.splice(1, 0, ["实收金额", usd(order.actual_income_usd), "strong"]);
+
+  return `<div class="detail-section detail-section-amounts">
+    <div class="detail-section-title">
+      <h4>金额汇总</h4>
+      <span>金额右对齐，保留核心财务字段</span>
+    </div>
+    <div class="amount-summary-grid">
+      ${rows.map(([label, value, cls]) => `<div class="amount-summary-row ${cls}">
+        <span>${esc(label)}</span>
+        <b>${esc(value)}</b>
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
 async function viewOrderModal(orderId) {
   try {
     const order = await json(`/api/orders/${orderId}`);
@@ -825,24 +859,36 @@ async function viewOrderModal(orderId) {
     }
 
     const logisticsCost = Number(order.logistics_cost_rmb) || 0;
-    const field = (label, value) => `<div><label>${label}<span class="detail-value">${esc(String(value || ""))}</span></label></div>`;
+    const field = (label, value, extraClass = "") => {
+      const cls = extraClass ? ` class="${extraClass}"` : "";
+      return `<div${cls}><label>${label}<span class="detail-value">${esc(String(value || ""))}</span></label></div>`;
+    };
     content.innerHTML =
+      '<div class="order-detail-stack">' +
+      '<div class="detail-section detail-section-overview">' +
+      '<div class="detail-section-title"><h4>订单概览</h4><span>' + esc(order.order_no || "#" + order.id) + '</span></div>' +
       '<div class="detail-grid">' +
       field("下单日期", order.order_date) +
       field("交期日期", order.delivery_date) +
+      field("备注", order.remark, "detail-field-wide") +
+      '</div></div>' +
+      '<div class="detail-section">' +
+      '<div class="detail-section-title"><h4>客户信息</h4><span>姓名 / 联系方式 / 地址</span></div>' +
+      '<div class="detail-grid">' +
       field("客户姓名", order.customer_name) +
       field("邮箱", order.customer_email) +
       field("电话", order.customer_phone) +
-      field("地址", order.customer_address) +
-      field("备注", order.remark) +
+      field("地址", order.customer_address, "detail-field-wide") +
       '</div>' +
-      '<div class="detail-section"><h4>物流信息</h4><div class="detail-grid">' +
+      '</div>' +
+      '<div class="detail-section">' +
+      '<div class="detail-section-title"><h4>物流信息</h4><span>发货 / 追踪 / 签收</span></div>' +
+      '<div class="detail-grid">' +
       field("货代", order.logistics_provider) +
       field("尾程派送渠道", order.delivery_channel) +
       field("尾程追踪编码", order.tracking_number) +
       field("重量 KG", order.weight_kg) +
       field("物流成本（RMB）", logisticsCost) +
-      field("总生产成本（RMB）", order.production_cost_override_rmb != null ? rmb(order.production_cost_override_rmb) : '系统计算') +
       field("发货时间", order.shipping_date) +
       field("到货时间", order.delivered_date) +
       '</div>' +
@@ -850,7 +896,8 @@ async function viewOrderModal(orderId) {
         ? '<div class="delivery-screenshot-section"><div class="delivery-screenshot-header"><h4>签收截图</h4></div><div class="delivery-screenshot-area"><div class="delivery-screenshot-preview"><img src="/api/orders/' + order.id + '/delivery-screenshot" alt="签收截图" onclick="window.open(this.src,\'_blank\')"></div></div></div>'
         : '') +
       '</div></div>' +
-      '<div class="detail-section"><h4>项目</h4>' +
+      orderFinancialSummaryHtml(order) +
+      '<div class="detail-section detail-section-items"><div class="detail-section-title"><h4>商品明细</h4><span>' + (order.items || []).length + ' 项</span></div>' +
       orderItemModulesHtml(order) +
       '</div>' +
       '<div class="detail-section reminder-section"><div class="reminder-section-header"><h4>提醒设置</h4>' +
@@ -859,7 +906,8 @@ async function viewOrderModal(orderId) {
       '<div class="reminder-form">' +
       '<label class="checkline"><input type="checkbox" id="orderReminderToggle" ' + (order.reminder ? 'checked' : '') + '> 标记为需要更新</label>' +
       '<textarea id="orderReminderText" rows="2" placeholder="提醒内容（可选）">' + esc(order.reminder_text || '') + '</textarea>' +
-      '</div></div>';
+      '</div></div>' +
+      '</div>';
 
     // Footer — reminder save button
     const footer = $("orderDetailFooter");
@@ -942,6 +990,15 @@ function renderNotifyPanel() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const authReady = await window.TwodrapesAuthUI?.init({
+    toast,
+    verifyChannel: "management",
+    currentApp: "management",
+    allowAccess: (user) => user?.role === "admin",
+    accessDeniedMessage: "仅管理员可进入管理端"
+  });
+  if (!authReady) return;
+
   initTabs();
 
   try {

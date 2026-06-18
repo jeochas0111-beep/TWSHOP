@@ -30,6 +30,25 @@
         </div>
       </div>
     </nav>
+    <div class="channel-switcher-wrap hidden" id="channelSwitcherWrap">
+      <button class="channel-switcher-btn" id="channelSwitcherBtn" type="button" aria-haspopup="true" aria-expanded="false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span id="channelSwitcherLabel">切换</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="channel-switcher-menu hidden" id="channelSwitcherMenu"></div>
+    </div>
+    <div class="user-menu-wrap" id="userMenuWrap">
+      <button class="user-menu-btn" id="userMenuBtn" type="button" aria-haspopup="true" aria-expanded="false">
+        <span class="user-menu-avatar" id="userMenuAvatar">U</span>
+        <span class="user-menu-button-copy">
+          <strong id="userMenuLabel">用户</strong>
+          <small id="userMenuSubLabel">登录中</small>
+        </span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="user-menu-panel hidden" id="userMenuPanel"></div>
+    </div>
     <div class="notify-wrap">
       <button class="notify-btn" id="notifyBtn" type="button" aria-label="提醒">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -449,6 +468,10 @@
             </div>
             <div class="table-wrap analytics-table-wrap"><table id="shopifyProductTable"></table></div>
           </section>
+          <section class="analytics-panel logistics-analytics-panel">
+            <div class="section-title compact"><h3>物流分析</h3></div>
+            <div id="shopifyLogisticsAnalysis" class="logistics-analysis-content">暂无物流分析数据</div>
+          </section>
         </div>
 
         <!-- 亚马逊 -->
@@ -483,6 +506,10 @@
               </label>
             </div>
             <div class="table-wrap analytics-table-wrap"><table id="amazonProductTable"></table></div>
+          </section>
+          <section class="analytics-panel logistics-analytics-panel">
+            <div class="section-title compact"><h3>物流分析</h3></div>
+            <div id="amazonLogisticsAnalysis" class="logistics-analysis-content">暂无物流分析数据</div>
           </section>
         </div>
       </article>
@@ -616,7 +643,52 @@
     </div>
   </div>
 
+  <div id="profileModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="个人信息">
+    <div class="modal-backdrop" id="closeProfileModal"></div>
+    <div class="modal-panel profile-modal-panel">
+      <header class="modal-header profile-modal-header">
+        <div class="modal-header-text">
+          <h3>个人信息</h3>
+          <p class="modal-header-desc">查看当前登录信息，修改显示名与登录密码。</p>
+        </div>
+        <button class="modal-close-btn" id="closeProfileBtn" type="button" aria-label="关闭">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+        </button>
+      </header>
+      <div class="modal-body profile-modal-body">
+        <section class="profile-summary-card">
+          <div class="profile-summary-copy">
+            <strong id="profileIdentityName">用户</strong>
+            <span id="profileIdentityMeta">-</span>
+          </div>
+        </section>
+        <section class="profile-grid">
+          <label class="profile-field editable">显示名<input id="profileDisplayNameInput" type="text" autocomplete="name"></label>
+          <label class="profile-field">用户名<input id="profileUsernameInput" type="text" disabled></label>
+          <label class="profile-field">角色<input id="profileRoleInput" type="text" disabled></label>
+          <label class="profile-field">渠道<input id="profileChannelInput" type="text" disabled></label>
+          <label class="profile-field wide">当前访问端<input id="profilePortInput" type="text" disabled></label>
+        </section>
+        <section class="profile-password-card">
+          <div class="profile-section-head">
+            <h4>修改密码</h4>
+            <p>最少 6 位，保存后下次登录立即生效。</p>
+          </div>
+          <form class="profile-grid" id="profilePasswordForm" onsubmit="return false;">
+            <label class="profile-field"><span>当前密码</span><input id="profileCurrentPassword" type="password" autocomplete="current-password"></label>
+            <label class="profile-field"><span>新密码</span><input id="profileNewPassword" type="password" autocomplete="new-password"></label>
+          </form>
+        </section>
+      </div>
+      <footer class="modal-footer profile-modal-footer">
+        <button class="btn secondary" id="profilePasswordBtn" type="button">更新密码</button>
+        <button class="btn primary" id="profileSaveBtn" type="button">保存显示名</button>
+      </footer>
+    </div>
+  </div>
+
   <script src="/js/api.js?v=20260613-ui-opt"></script>
+  <script src="/js/auth-ui.js?v=20260619-auth"></script>
   <script src="/js/formulas.js"></script>
   <script src="/js/main.js?v=20260613-ui-opt"></script>
 </body>

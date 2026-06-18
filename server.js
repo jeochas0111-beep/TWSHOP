@@ -28,6 +28,7 @@ const analyticsRoutes = require('./src/routes/analytics');
 const backupsRoutes = require('./src/routes/backups');
 const shopifyRoutes = require('./src/routes/shopify');
 const { sampleRoutes } = require('./src/routes/samples');
+const productionPhotosRoutes = require('./src/routes/production-photos');
 const { authRoutes, managementAuthRoutes, userRoutes } = require('./src/routes/auth');
 const { jwtAuth } = require('./src/utils/auth');
 
@@ -74,7 +75,7 @@ const factoryApp = express();
 const amazonApp = express();
 
 // 初始化数据库
-for (const dir of [dataDir, backupDir, exportDir]) fs.mkdirSync(dir, { recursive: true });
+for (const dir of [dataDir, backupDir, exportDir, path.join(dataDir, 'production-photos')]) fs.mkdirSync(dir, { recursive: true });
 initDb();
 seedIfEmpty();
 
@@ -94,6 +95,7 @@ factoryApp.use(compression());
 factoryApp.use(express.json({ limit: '20mb' }));
 factoryApp.use(express.urlencoded({ extended: true }));
 factoryApp.use(express.static(path.join(__dirname, 'public-factory'), { maxAge: '1h', etag: true }));
+factoryApp.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', etag: true }));
 
 // 亚马逊端中间件（共用 public/ 前端）
 amazonApp.use(cors);
@@ -120,6 +122,7 @@ app.use('/api', analyticsRoutes);
 app.use('/api', backupsRoutes);
 app.use('/api', shopifyRoutes);
 app.use('/api', sampleRoutes());
+app.use('/api', productionPhotosRoutes);
 app.get('/api/bootstrap', (req, res) => {
   res.json({ ...context(req.channel), features: appConfig, rates: appConfig.rateConfig() });
 });
@@ -139,6 +142,7 @@ factoryApp.use('/api', factoryRoutes);
 factoryApp.use('/api', analyticsRoutes);
 factoryApp.use('/api', backupsRoutes);
 factoryApp.use('/api', sampleRoutes());
+factoryApp.use('/api', productionPhotosRoutes);
 factoryApp.get('/api/bootstrap', (req, res) => {
   res.json({ ...context(req.channel), features: appConfig, rates: appConfig.rateConfig() });
 });
@@ -158,6 +162,7 @@ amazonApp.use('/api', factoryRoutes);
 amazonApp.use('/api', analyticsRoutes);
 amazonApp.use('/api', backupsRoutes);
 amazonApp.use('/api', sampleRoutes());
+amazonApp.use('/api', productionPhotosRoutes);
 amazonApp.get('/api/bootstrap', (req, res) => {
   res.json({ ...context(req.channel), features: appConfig, rates: appConfig.rateConfig() });
 });

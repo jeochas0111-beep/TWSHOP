@@ -18,6 +18,95 @@ const today = () => new Date().toISOString().slice(0, 10);
 const optionEditor = { groups: [], activeIndex: 0 };
 const optionDragState = { fromIndex: null };
 
+// ===== Logistics Tracking Utilities =====
+function getOrderCarrier(order) {
+  if (!order) return '';
+  return (
+    order.carrier ||
+    order.shippingCarrier ||
+    order.shipping_carrier ||
+    order.logisticsCarrier ||
+    order.logistics_carrier ||
+    order.deliveryChannel ||
+    order.delivery_channel ||
+    order.logisticsChannel ||
+    order.logistics_channel ||
+    order.shippingMethod ||
+    order.shipping_method ||
+    order.logistics_provider ||
+    order.expressCompany ||
+    order.express_company ||
+    ''
+  );
+}
+
+function normalizeCarrier(carrier = '') {
+  const value = String(carrier).trim().toLowerCase();
+  if (!value) return '';
+
+  if (value.includes('usps') || value.includes('u.s.p.s') || value.includes('postal') || value.includes('美国邮政')) return 'usps';
+  if (value === 'ups' || value.includes('united parcel')) return 'ups';
+  if (value.includes('fedex') || value.includes('fed ex') || value.includes('federal express')) return 'fedex';
+  if (value.includes('dhl')) return 'dhl';
+  if (value.includes('yun') || value.includes('云途')) return 'yunexpress';
+  if (value.includes('4px') || value.includes('递四方')) return '4px';
+  if (value.includes('yanwen') || value.includes('燕文')) return 'yanwen';
+  if (value.includes('ontrac')) return 'ontrac';
+  if (value.includes('amazon') || value.includes('amzl') || value.includes('亚马逊物流')) return 'amazon';
+  if (value.includes('cainiao') || value.includes('菜鸟')) return 'cainiao';
+  if (value.includes('uniuni')) return 'uniuni';
+  if (value.includes('speedx')) return 'speedx';
+  if (value.includes('lasership')) return 'lasership';
+
+  return value;
+}
+
+function getTrackingUrlByCarrier(carrier, trackingCode) {
+  const normalizedCarrier = normalizeCarrier(carrier);
+  const code = encodeURIComponent(String(trackingCode || '').trim());
+  if (!code) return '';
+
+  const builders = {
+    usps: () => `https://tools.usps.com/go/TrackConfirmAction?tLabels=${code}`,
+    ups: () => `https://www.ups.com/track?tracknum=${code}`,
+    fedex: () => `https://www.fedex.com/fedextrack/?trknbr=${code}`,
+    dhl: () => `https://www.dhl.com/us-en/home/tracking.html?tracking-id=${code}`,
+    yunexpress: () => `https://www.yuntrack.com/parcelTracking?id=${code}`,
+    '4px': () => `https://www.4px.com/track/${code}`,
+    yanwen: () => `https://track.yw56.com.cn/en/querydel?nums=${code}`,
+    ontrac: () => `https://www.ontrac.com/tracking/?number=${code}`,
+    amazon: () => `https://track.amazon.com/`,
+    cainiao: () => `https://global.cainiao.com/newDetail.htm?mailNoList=${code}`,
+  };
+
+  return builders[normalizedCarrier] ? builders[normalizedCarrier]() : '';
+}
+
+async function handleTrackingCodeClick(event, order) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const trackingCode = String(order?.tracking_number || '').trim();
+  const carrier = getOrderCarrier(order);
+
+  if (!trackingCode) return;
+
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(trackingCode);
+    copied = true;
+  } catch { /* clipboard write failed */ }
+
+  const trackingUrl = getTrackingUrlByCarrier(carrier, trackingCode);
+
+  if (trackingUrl) {
+    window.open(trackingUrl, '_blank', 'noopener,noreferrer');
+    toast(copied ? '追踪编码已复制，正在打开物流官网' : '物流官网已打开，追踪编码复制失败');
+  } else {
+    toast(copied ? '追踪编码已复制，未配置该物流渠道官网' : '追踪编码复制失败，且未配置该物流渠道官网', 'warn');
+  }
+}
+
 function toast(msg, type = '') {
   const el = $('toast');
   if (!el) return;
@@ -430,7 +519,7 @@ function optionListHtml(optRows) {
 }
 function orderItemModulesHtml(order, isEdit) {
   const items = order.items || [];
-  if (!items.length) return '<div class="order-options-detail"><h4>项目</h4><div class="notice">暂无项目。</div></div>';
+  if (!items.length) return '<div class="notice">暂无项目。</div>';
 
   // Edit mode: keep individual item cards with edit controls
   if (isEdit) {
@@ -522,7 +611,54 @@ function orderItemModulesHtml(order, isEdit) {
     : items.reduce((s, it) => s + (Number(it.final_cost_rmb) || 0), 0);
   const hasCost = order.production_cost_override_rmb != null || totalProdCost > 0;
   const costFooter = hasCost ? `<div class="item-group-cost-footer">总生产成本: ${rmb(totalProdCost)}</div>` : '';
-  return groupsHtml + costFooter;
+
+  // Production photos section
+  const photosSection = `<div class="detail-section production-photos-section">
+    <div class="detail-section-title"><h4>生产照片</h4><span>${items.length} 个订单项</span></div>
+    ${items.map(it => `<div class="production-photos-item" data-order-item-id="${it.id}">
+      <div class="production-photos-header">
+        <span class="production-photos-item-name">${esc(it.product_name || '产品')} — ${esc(it.item_code || '')}</span>
+        <label class="btn small secondary production-photos-upload-btn">上传照片<input type="file" class="production-photos-file-input" data-item-id="${it.id}" accept="image/png,image/jpeg,image/gif,image/webp" multiple style="display:none"></label>
+      </div>
+      <div class="production-photos-grid" data-photos-for="${it.id}"><div class="production-photos-empty">暂无照片</div></div>
+    </div>`).join('')}
+  </div>`;
+
+  return groupsHtml + costFooter + photosSection;
+}
+
+function orderFinancialSummaryHtml(order) {
+  const profit = Number(order.total_profit_rmb) || 0;
+  const profitRate = Number(order.total_profit_rate) || 0;
+  const totalCost = Number(order.total_cost_rmb) || 0;
+  const productionCost = order.production_cost_override_rmb != null
+    ? Number(order.production_cost_override_rmb)
+    : (order.items || []).reduce((sum, item) => sum + (Number(item.final_cost_rmb) || 0), 0);
+  const rows = [
+    ['订单销售额', usd(order.total_sales_usd), 'strong'],
+    ['税费', usd(order.total_tax_usd), ''],
+    ['净销售 RMB', rmb(order.total_net_sales_rmb), ''],
+    ['生产成本 RMB', rmb(productionCost), ''],
+    ['物流成本 RMB', rmb(order.logistics_cost_rmb), ''],
+    ['总成本 RMB', rmb(totalCost), ''],
+    ['利润 RMB', rmb(profit), profit < 0 ? 'bad strong' : 'good strong'],
+    ['利润率', `${fmt(profitRate * 100, 1)}%`, profitRate < 0 ? 'bad strong' : 'good strong']
+  ];
+  if (Number(order.paypal_fee_usd) > 0) rows.splice(3, 0, ['PayPal 手续费', usd(order.paypal_fee_usd), '']);
+  if (Number(order.actual_income_usd) > 0) rows.splice(1, 0, ['实收金额', usd(order.actual_income_usd), 'strong']);
+
+  return `<div class="detail-section detail-section-amounts">
+    <div class="detail-section-title">
+      <h4>金额汇总</h4>
+      <span>金额右对齐，保留核心财务字段</span>
+    </div>
+    <div class="amount-summary-grid">
+      ${rows.map(([label, value, cls]) => `<div class="amount-summary-row ${cls}">
+        <span>${esc(label)}</span>
+        <b>${esc(value)}</b>
+      </div>`).join('')}
+    </div>
+  </div>`;
 }
 async function saveEditableOrderItems(form, orderId) {
   const widthInputs = Array.from(form.querySelectorAll('[data-item-width-input]'));
@@ -665,29 +801,46 @@ async function viewOrderModal(orderId, mode) {
     badge.textContent = statusInfo.label;
     badge.className = 'order-status ' + statusInfo.cls;
 
-    const field = (label, value, inputType, fieldName) => {
-      if (!isEdit) return `<div><label>${label}<span class="detail-value">${esc(String(value || ''))}</span></label></div>`;
-      if (inputType === 'textarea') return `<div><label>${label}<textarea rows="2" data-edit-field="${fieldName}">${esc(value || '')}</textarea></label></div>`;
-      if (inputType === 'date') return `<div><label>${label}<input type="date" value="${esc(value || '')}" data-edit-field="${fieldName}"></label></div>`;
-      if (inputType === 'number') return `<div><label>${label}<input type="number" step="0.01" min="0" value="${fmt(value)}" data-edit-field="${fieldName}"></label></div>`;
-      if (inputType === 'integer') return `<div><label>${label}<input type="number" step="1" min="0" inputmode="numeric" value="${esc(value ?? '')}" data-edit-field="${fieldName}"></label></div>`;
-      return `<div><label>${label}<input value="${esc(value || '')}" data-edit-field="${fieldName}"></label></div>`;
+    const field = (label, value, inputType, fieldName, extraClass = '') => {
+      const cls = extraClass ? ` class="${extraClass}"` : '';
+      if (!isEdit) return `<div${cls}><label>${label}<span class="detail-value">${esc(String(value || ''))}</span></label></div>`;
+      if (inputType === 'textarea') return `<div${cls}><label>${label}<textarea rows="2" data-edit-field="${fieldName}">${esc(value || '')}</textarea></label></div>`;
+      if (inputType === 'date') return `<div${cls}><label>${label}<input type="date" value="${esc(value || '')}" data-edit-field="${fieldName}"></label></div>`;
+      if (inputType === 'number') return `<div${cls}><label>${label}<input type="number" step="0.01" min="0" value="${fmt(value)}" data-edit-field="${fieldName}"></label></div>`;
+      if (inputType === 'integer') return `<div${cls}><label>${label}<input type="number" step="1" min="0" inputmode="numeric" value="${esc(value ?? '')}" data-edit-field="${fieldName}"></label></div>`;
+      return `<div${cls}><label>${label}<input value="${esc(value || '')}" data-edit-field="${fieldName}"></label></div>`;
     };
 
     form.innerHTML =
+      '<div class="order-detail-stack">' +
+      '<div class="detail-section detail-section-overview">' +
+      '<div class="detail-section-title"><h4>订单概览</h4><span>' + esc(order.order_no || '#' + order.id) + '</span></div>' +
       '<div class="detail-grid">' +
       field('下单日期', order.order_date, 'date', 'order_date') +
       field('交期日期', order.delivery_date, 'date', 'delivery_date') +
+      field('备注', order.remark, 'text', 'remark', 'detail-field-wide') +
+      '</div></div>' +
+      '<div class="detail-section">' +
+      '<div class="detail-section-title"><h4>客户信息</h4><span>姓名 / 联系方式 / 地址</span></div>' +
+      '<div class="detail-grid">' +
       field('客户姓名', order.customer_name, 'text', 'customer_name') +
       field('邮箱', order.customer_email, 'text', 'customer_email') +
       field('电话', order.customer_phone, 'text', 'customer_phone') +
-      field('地址', order.customer_address, 'textarea', 'customer_address') +
-      field('备注', order.remark, 'text', 'remark') +
+      field('地址', order.customer_address, 'textarea', 'customer_address', 'detail-field-wide') +
       '</div>' +
-      '<div class="detail-section"><h4>物流信息</h4><div class="detail-grid">' +
+      '</div>' +
+      '<div class="detail-section">' +
+      '<div class="detail-section-title"><h4>物流信息</h4><span>发货 / 追踪 / 签收</span></div>' +
+      '<div class="detail-grid">' +
       field('货代', order.logistics_provider, 'text', 'logistics_provider') +
       field('尾程派送渠道', order.delivery_channel, 'text', 'delivery_channel') +
-      field('尾程追踪编码', order.tracking_number, 'text', 'tracking_number') +
+      (isEdit
+        ? field('尾程追踪编码', order.tracking_number, 'text', 'tracking_number')
+        : `<div><label>尾程追踪编码${
+            order.tracking_number
+              ? `<button type="button" class="tracking-code-link" data-tracking-code="${esc(order.tracking_number)}" data-carrier="${esc(getOrderCarrier(order))}" title="点击复制追踪编码并打开物流官网"><span class="tracking-code-text">${esc(order.tracking_number)}</span><span class="tracking-code-icon" aria-hidden="true">↗</span></button>`
+              : `<span class="detail-value">${esc(order.tracking_number || '')}</span>`
+          }</label></div>`) +
       field('送达日期', order.delivered_date, 'date', 'delivered_date') +
       field('发货日期', order.shipping_date, 'date', 'shipping_date') +
       field('重量 KG', order.weight_kg, 'number', 'weight_kg') +
@@ -702,8 +855,13 @@ async function viewOrderModal(orderId, mode) {
       '<div class="delivery-screenshot-upload"><label class="btn small secondary" id="uploadScreenshotLabel">上传截图<input type="file" accept="image/*" id="screenshotFileInput" style="display:none"></label></div>' +
       '</div></div>' +
       '</div></div>' +
+      orderFinancialSummaryHtml(order) +
       (isEdit ? orderLevelDiscountHtml(order) : '') +
-      orderItemModulesHtml(order, isEdit);
+      '<div class="detail-section detail-section-items">' +
+      '<div class="detail-section-title"><h4>商品明细</h4><span>' + (order.items || []).length + ' 项</span></div>' +
+      orderItemModulesHtml(order, isEdit) +
+      '</div>' +
+      '</div>';
 
     // Footer action buttons
     const footer = $('editOrderFooter');
@@ -713,10 +871,44 @@ async function viewOrderModal(orderId, mode) {
 
     $('editOrderModal').classList.remove('hidden');
 
+    // Load production photos for each item
+    for (const it of (order.items || [])) {
+      loadProductionPhotos(it.id);
+    }
+
+    // Setup real-time profit preview in edit mode
+    if (isEdit) {
+      setupProfitPreview(form, order);
+    }
+
     // Bind close
     const closeHandler = () => $('editOrderModal').classList.add('hidden');
     $('closeEditOrderBtn').onclick = closeHandler;
     $('closeEditOrderModal').onclick = closeHandler;
+
+    // Tracking code click delegation (view mode only)
+    if (!isEdit) {
+      form.addEventListener('click', (e) => {
+        const link = e.target.closest('.tracking-code-link');
+        if (!link) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const trackingCode = link.dataset.trackingCode || '';
+        const carrier = link.dataset.carrier || '';
+        if (!trackingCode) return;
+        (async () => {
+          let copied = false;
+          try { await navigator.clipboard.writeText(trackingCode); copied = true; } catch {}
+          const url = getTrackingUrlByCarrier(carrier, trackingCode);
+          if (url) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+            toast(copied ? '追踪编码已复制，正在打开物流官网' : '物流官网已打开，追踪编码复制失败');
+          } else {
+            toast(copied ? '追踪编码已复制，未配置该物流渠道官网' : '追踪编码复制失败，且未配置该物流渠道官网', 'warn');
+          }
+        })();
+      });
+    }
 
     // Real-time discount preview
     if (isEdit) {
@@ -2881,6 +3073,33 @@ function renderChannelAnalytics(channel) {
   renderChannelTrendChart(channel, data.monthlyTrend || []);
   renderChannelExpenseChart(channel, data.expenseBreakdown || []);
   renderChannelProductTable(channel);
+  renderLogisticsAnalysis(channel, data.logisticsAnalysis || {});
+}
+
+function renderLogisticsAnalysis(channel, la) {
+  const el = $(channel === 'shopify' ? 'shopifyLogisticsAnalysis' : 'amazonLogisticsAnalysis');
+  if (!el) return;
+  const byCarrier = la.byCarrier || [];
+  if (!byCarrier.length) { el.innerHTML = '<div class="empty">暂无物流分析数据</div>'; return; }
+  const summaryCards = [
+    `<div class="logistics-kpi"><span>物流总成本</span><b>${rmb(la.totalCostRmb || 0)}</b></div>`,
+    `<div class="logistics-kpi"><span>平均物流成本</span><b>${rmb(la.avgCostRmb || 0)}</b></div>`,
+    `<div class="logistics-kpi"><span>平均重量</span><b>${fmt(la.avgWeightKg || 0, 2)} kg</b></div>`,
+    `<div class="logistics-kpi"><span>有物流订单数</span><b>${la.orderCount || 0}</b></div>`
+  ];
+  const rows = byCarrier.map(c => `<tr>
+    <td>${esc(c.carrier)}</td>
+    <td>${c.orderCount}</td>
+    <td>${fmt(c.totalWeight, 2)} kg</td>
+    <td>${fmt(c.avgWeightKg, 2)} kg</td>
+    <td>${rmb(c.totalCostRmb)}</td>
+    <td>${rmb(c.avgCostRmb)}</td>
+  </tr>`).join('');
+  el.innerHTML = `<div class="logistics-kpi-grid">${summaryCards.join('')}</div>
+    <div class="table-wrap analytics-table-wrap"><table>
+      <thead><tr><th>物流渠道</th><th>订单数</th><th>总重量</th><th>平均重量</th><th>总物流成本</th><th>平均物流成本</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
 }
 
 function resetAnalyticsFilters() {
@@ -2981,6 +3200,106 @@ function renderNotifyPanel() {
   const content = $('notifyContent');
   if (content) content.innerHTML = html;
 }
+
+// ===== Production Photos =====
+async function loadProductionPhotos(orderItemId) {
+  try {
+    const photos = await api.json(`/api/production-photos/${orderItemId}`);
+    renderProductionPhotos(orderItemId, photos);
+  } catch {}
+}
+
+function renderProductionPhotos(orderItemId, photos) {
+  const grid = document.querySelector(`[data-photos-for="${orderItemId}"]`);
+  if (!grid) return;
+  if (!photos.length) { grid.innerHTML = '<div class="production-photos-empty">暂无照片</div>'; return; }
+  grid.innerHTML = photos.map(p => `<div class="production-photo-thumb" data-photo-id="${p.id}">
+    <img src="/api/production-photos/file/${encodeURIComponent(p.filename)}" alt="${esc(p.original_name || '')}" loading="lazy" onclick="window.open(this.src,'_blank')">
+    <button class="production-photo-delete" data-delete-photo="${p.id}" title="删除照片">&times;</button>
+  </div>`).join('');
+  grid.querySelectorAll('[data-delete-photo]').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm('确认删除此照片？')) return;
+      try {
+        await api.json(`/api/production-photos/${btn.dataset.deletePhoto}`, { method: 'DELETE' });
+        loadProductionPhotos(orderItemId);
+      } catch (err) { toast(err.message, 'bad'); }
+    };
+  });
+}
+
+async function uploadProductionPhotos(orderItemId, files) {
+  const fd = new FormData();
+  for (const file of files) fd.append('photos', file);
+  try {
+    toast('正在上传照片...');
+    await api.json(`/api/production-photos/${orderItemId}`, { method: 'POST', body: fd });
+    toast('照片已上传');
+    loadProductionPhotos(orderItemId);
+  } catch (e) { toast('上传失败: ' + e.message, 'bad'); }
+}
+
+// ===== Real-time Profit Preview (edit mode) =====
+function setupProfitPreview(form, order) {
+  if (!form || !order) return;
+  const container = document.createElement('div');
+  container.className = 'profit-preview-bar';
+  container.innerHTML = '<div class="profit-preview-label">实时利润预览 <small>根据当前输入实时估算，保存后才会写入订单</small></div><div class="profit-preview-grid"></div>';
+  const firstSection = form.querySelector('.detail-section');
+  if (firstSection) firstSection.parentNode.insertBefore(container, firstSection.nextSibling);
+
+  const update = () => {
+    const salesOverride = Number(form.querySelector('[data-order-actual-paid]')?.value) || 0;
+    const discountApply = form.querySelector('[data-order-discount-apply]')?.checked !== false;
+    const discountMode = form.querySelector('[data-order-discount-mode]')?.value || 'percent';
+    const discountValue = Number(form.querySelector('[data-order-discount-value]')?.value || 0);
+    const prodCostInput = form.querySelector('[data-order-production-cost]');
+    const logisticsInput = form.querySelector('[data-edit-field="logistics_cost_rmb"]');
+
+    let totalSalesUsd = 0;
+    const items = order.items || [];
+    for (const it of items) {
+      const sysPrice = Number(it.system_price_usd) || 0;
+      let finalPrice = sysPrice;
+      if (discountApply && discountValue > 0) {
+        if (discountMode === 'percent') finalPrice = Math.max(0, sysPrice - sysPrice * Math.min(discountValue, 100) / 100);
+        else finalPrice = Math.max(0, sysPrice - Math.min(discountValue, sysPrice));
+      }
+      totalSalesUsd += finalPrice * (Number(it.qty) || 1);
+    }
+    if (salesOverride > 0) totalSalesUsd = salesOverride;
+
+    const usdRmb = USD_RMB_RATE || 6.9;
+    const paypalRate = PAYPAL_FEE_RATE || 0.044;
+    const incomeRmb = totalSalesUsd * (1 - paypalRate) * usdRmb;
+    const productionCost = prodCostInput ? (Number(prodCostInput.value) || 0) : (order.production_cost_override_rmb != null ? Number(order.production_cost_override_rmb) : items.reduce((s, it) => s + (Number(it.final_cost_rmb) || 0), 0));
+    const logisticsCost = logisticsInput ? (Number(logisticsInput.value) || 0) : (Number(order.logistics_cost_rmb) || 0);
+    const totalCost = productionCost + logisticsCost;
+    const profit = incomeRmb - totalCost;
+    const profitRate = incomeRmb > 0 ? profit / incomeRmb : 0;
+
+    const grid = container.querySelector('.profit-preview-grid');
+    if (grid) grid.innerHTML = `
+      <div class="profit-preview-cell"><span>预计销售额</span><b>${rmb(totalSalesUsd * usdRmb)}</b></div>
+      <div class="profit-preview-cell"><span>生产成本</span><b>${rmb(productionCost)}</b></div>
+      <div class="profit-preview-cell"><span>物流成本</span><b>${rmb(logisticsCost)}</b></div>
+      <div class="profit-preview-cell"><span>预计利润</span><b class="${profit >= 0 ? 'good' : 'bad'}">${rmb(profit)}</b></div>
+      <div class="profit-preview-cell"><span>利润率</span><b class="${profitRate < 0 ? 'bad' : profitRate < 0.3 ? 'warn' : 'good'}">${fmt(profitRate * 100, 1)}%</b></div>
+    `;
+  };
+
+  form.addEventListener('input', (e) => {
+    if (e.target.matches('[data-order-production-cost], [data-edit-field="logistics_cost_rmb"], [data-order-actual-paid], [data-order-discount-apply], [data-order-discount-mode], [data-order-discount-value]')) {
+      update();
+    }
+  });
+  form.addEventListener('change', (e) => {
+    if (e.target.matches('[data-order-discount-apply], [data-order-discount-mode]')) update();
+  });
+  update();
+}
+
 function bind() {
   document.querySelectorAll('nav button[data-tab]').forEach(btn => btn.onclick = () => {
     location.hash = btn.dataset.tab;
@@ -3369,6 +3688,17 @@ function bind() {
     if (el) el.textContent = name;
   };
   if ($('saveTaxRatesBtn')) $('saveTaxRatesBtn').onclick = saveTaxRates;
+
+  // Production photos - event delegation on modal body
+  document.addEventListener('change', (e) => {
+    const fileInput = e.target.closest('.production-photos-file-input');
+    if (!fileInput) return;
+    const itemId = fileInput.dataset.itemId;
+    if (!itemId || !fileInput.files.length) return;
+    uploadProductionPhotos(Number(itemId), fileInput.files);
+    fileInput.value = '';
+  });
+
   // Ensure preview panel has an initial binding-refresh even if some controls did not emit input events yet.
   updatePreview();
 
@@ -3380,18 +3710,14 @@ function bind() {
 }
 document.addEventListener('DOMContentLoaded', async () => {
   applyChannelChrome();
-  const token = localStorage.getItem('twodrapes_token');
-  if (token) {
-    try {
-      const res = await api.json('/api/auth/verify', { method: 'POST', body: JSON.stringify({ token, channel: ORDER_CHANNEL }), allowFalse: true });
-      if (!res.ok) throw new Error();
-    } catch {
-      localStorage.removeItem('twodrapes_token');
-      localStorage.removeItem('twodrapes_user');
-      if (location.pathname !== '/login.html') window.location.href = '/login.html';
-      return;
-    }
-  }
+  const authReady = await window.TwodrapesAuthUI?.init({
+    toast,
+    verifyChannel: ORDER_CHANNEL,
+    currentApp: ORDER_CHANNEL,
+    allowAccess: () => true
+  });
+  if (!authReady) return;
+
   bind();
   try { await loadAll(); renderCurrentItems(); await calcSplice(); toast('已连接服务器数据库'); } catch (e) { toast(e.message, 'bad'); }
   if (ORDER_CHANNEL === 'amazon') {
