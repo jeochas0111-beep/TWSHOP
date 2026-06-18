@@ -164,7 +164,7 @@ h1 {
 #page-products > .grid,
 #page-profit > .grid { gap: 16px }
 
-/* ===== Topbar ===== */
+/* ===== Topbar — iOS Liquid Glass ===== */
 .topbar {
   position: sticky;
   top: 0;
@@ -175,18 +175,21 @@ h1 {
   grid-template-columns: auto minmax(0, 1fr) auto;
   column-gap: 18px;
   align-items: center;
-  background: rgba(30,58,106,.88);
-  backdrop-filter: saturate(180%) blur(24px);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-  border-bottom: 1px solid rgba(255,255,255,.1);
-  box-shadow: 0 1px 4px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.06);
+  background: rgba(30,58,106,.82);
+  backdrop-filter: saturate(200%) blur(28px);
+  -webkit-backdrop-filter: saturate(200%) blur(28px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.08),
+    0 4px 16px rgba(0,0,0,.1),
+    inset 0 1px 0 rgba(255,255,255,.06);
   padding: 0 20px;
 }
 .topbar::after {
   content: '';
   position: absolute;
   inset: 0;
-  border-bottom: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid rgba(255,255,255,.06);
   pointer-events: none;
   border-radius: inherit;
 }
@@ -194,6 +197,8 @@ h1 {
   padding-left: 12px;
   border-left: 3px solid #7EB0E0;
   color: #fff;
+  font-size: 16px;
+  letter-spacing: -.01em;
 }
 .topbar nav {
   flex: 1 1 auto;
@@ -201,20 +206,42 @@ h1 {
   max-width: 860px;
   min-width: 0;
   justify-content: center;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .topbar nav > button {
-  color: rgba(255,255,255,.55);
+  color: rgba(255,255,255,.5);
+  position: relative;
+  transition: all .18s var(--ease);
 }
 .topbar nav > button:hover {
-  color: #fff;
-  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.9);
+  background: rgba(255,255,255,.08);
 }
 .topbar nav > button.active {
-  background: #fff;
-  color: #000;
-  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  background: rgba(255,255,255,.92);
+  color: #1C1C1E;
+  box-shadow:
+    0 1px 3px rgba(0,0,0,.12),
+    0 0 0 1px rgba(255,255,255,.2),
+    inset 0 1px 0 rgba(255,255,255,.5);
+}
+/* Glow ring on active menu item */
+.topbar nav > button.active::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, rgba(255,255,255,.3) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+  animation: navGlowIn .25s var(--ease-out-quart);
+}
+@keyframes navGlowIn {
+  from { opacity: 0; transform: scale(.8) }
+  to { opacity: 1; transform: scale(1) }
 }
 .topbar .notify-wrap { flex: 0 0 auto; }
 .topbar > div:first-child { flex: 0 0 auto; }
@@ -222,36 +249,56 @@ h1 {
 /* ===== Navigation Tabs — iOS Segmented Control ===== */
 nav, .tab-nav {
   display: flex;
-  gap: 0;
-  padding: 2px;
-  border: 1px solid rgba(0,0,0,.06);
-  border-radius: 9px;
-  background: rgba(0,0,0,.04);
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  background: rgba(0,0,0,.06);
   overflow-x: auto;
   backdrop-filter: saturate(120%) blur(8px);
   -webkit-backdrop-filter: saturate(120%) blur(8px);
+  scrollbar-width: none;
 }
+nav::-webkit-scrollbar, .tab-nav::-webkit-scrollbar { display: none }
 nav button, .tab-nav button {
+  position: relative;
   min-height: 32px;
   border: none;
   background: transparent;
-  color: var(--muted);
-  border-radius: 7px;
+  color: rgba(255,255,255,.5);
+  border-radius: 8px;
   padding: 6px 14px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.1;
   white-space: nowrap;
-  transition: all var(--duration-fast) var(--ease);
+  transition: all .18s var(--ease);
+  z-index: 1;
 }
 nav button:hover, .tab-nav button:hover {
-  color: var(--ink);
+  color: rgba(255,255,255,.85);
+  background: rgba(255,255,255,.06);
 }
 nav button.active, .tab-nav button.active {
-  background: var(--card);
-  color: var(--ink);
-  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 0 1px rgba(0,0,0,.04);
+  background: rgba(255,255,255,.92);
+  color: #1C1C1E;
+  box-shadow:
+    0 1px 3px rgba(0,0,0,.1),
+    0 0 0 1px rgba(255,255,255,.15),
+    inset 0 1px 0 rgba(255,255,255,.4);
+}
+/* Subtle glow under active tab */
+nav button.active::after, .tab-nav button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: radial-gradient(ellipse at center, rgba(0,122,255,.5) 0%, transparent 100%);
+  border-radius: 2px;
+  pointer-events: none;
 }
 
 /* ===== Card — iOS Glass Panel ===== */
@@ -2594,21 +2641,25 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
 .tools-dropdown { position: relative }
 .tools-dropdown-btn {
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   background: transparent;
   color: var(--muted);
-  padding: 7px 12px;
+  padding: 6px 12px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  min-height: 34px;
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  transition: all .18s var(--ease);
 }
 .tools-dropdown-btn:hover { background: var(--surface-highlight); color: var(--ink) }
-.topbar .tools-dropdown-btn { color: rgba(255,255,255,.6) }
-.topbar .tools-dropdown-btn:hover { background: rgba(255,255,255,.1); color: #fff }
+.topbar .tools-dropdown-btn { color: rgba(255,255,255,.5) }
+.topbar .tools-dropdown-btn:hover {
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.85);
+}
 .tools-dropdown-menu {
   position: fixed;
   top: auto;
