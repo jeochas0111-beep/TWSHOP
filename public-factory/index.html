@@ -43,7 +43,6 @@
               <button class="btn secondary small" id="summaryExportBtn">导出 CSV</button>
               <button class="btn secondary small" id="summaryFullExportBtn">导出全部订单信息</button>
               <button class="btn secondary small" id="summaryRefreshBtn">刷新</button>
-              <button class="btn secondary small" id="openFactorySamplesBtn" type="button">面料样品</button>
             </div>
           </div>
         </div>
@@ -141,7 +140,6 @@
                 <span class="trend-legend-item"><span class="trend-legend-color" style="background:var(--chart-income)"></span>收入</span>
                 <span class="trend-legend-item"><span class="trend-legend-color" style="background:var(--chart-cost)"></span>支出</span>
                 <span class="trend-legend-item"><span class="trend-legend-color" style="background:var(--chart-profit)"></span>利润</span>
-                <span class="trend-legend-item"><span class="trend-legend-color" style="background:var(--chart-sample)"></span>样品</span>
               </div>
             </section>
             <section class="analytics-panel">
@@ -273,21 +271,6 @@
         <button class="btn small secondary" id="closeOrderDetailBtn" type="button">关闭</button>
       </div>
       <div id="orderDetailContent"></div>
-    </div>
-  </div>
-
-  <div id="factorySamplesModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="面料样品">
-    <div class="modal-backdrop" id="closeFactorySamplesModal"></div>
-    <div class="modal-panel" style="max-width:800px">
-      <div class="section-title">
-        <h3>面料样品</h3>
-        <div class="toolbar">
-          <button class="btn secondary small" id="factorySamplesRefreshBtn" type="button">刷新</button>
-          <button class="btn small secondary" id="closeFactorySamplesModalBtn" type="button">关闭</button>
-        </div>
-      </div>
-      <div id="factorySamplesStats" class="notice">加载中...</div>
-      <div class="table-wrap"><table id="factorySamplesTable"></table></div>
     </div>
   </div>
 

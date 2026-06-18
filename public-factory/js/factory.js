@@ -307,7 +307,7 @@ function analyticsMetric(label, value, hint = "") {
   </div>`;
 }
 
-function renderChannelSummary(channel, summary = {}, sampleSummary = {}) {
+function renderChannelSummary(channel, summary = {}) {
   const el = $(channel === "shopify" ? "shopifyAnalyticsSummary" : "amazonAnalyticsSummary");
   if (!el) return;
   const cards = [
@@ -322,8 +322,6 @@ function renderChannelSummary(channel, summary = {}, sampleSummary = {}) {
   if (channel === "shopify") {
     cards.splice(4, 0, analyticsMetric("PayPal 手续费", rmb(summary.paypalFeeRmb)));
     cards.splice(5, 0, analyticsMetric("税费", rmb(summary.taxRmb)));
-    cards.push(analyticsMetric("样品售出", String(sampleSummary.totalQty || 0), `${sampleSummary.totalRecords || 0} 笔`));
-    cards.push(analyticsMetric("样品收入", rmb(sampleSummary.totalAmountRmb || 0), `$${fmt(sampleSummary.totalAmountUsd || 0)}`));
   } else {
     const commission = (summary.incomeRmb || 0) * 0.15;
     cards.splice(4, 0, analyticsMetric("平台佣金 (15%)", rmb(commission)));
@@ -331,68 +329,42 @@ function renderChannelSummary(channel, summary = {}, sampleSummary = {}) {
   el.innerHTML = cards.join("");
 }
 
-function renderChannelTrendChart(channel, rows = [], sampleTrend = []) {
+function renderChannelTrendChart(channel, rows = []) {
   const el = $(channel === "shopify" ? "shopifyTrendChart" : "amazonTrendChart");
   if (!el) return;
-  const showSamples = channel === "shopify" && sampleTrend.length > 0;
-  if (!rows.length && !showSamples) {
+  if (!rows.length) {
     el.className = "analytics-chart empty";
     el.textContent = "暂无数据";
     return;
   }
 
-  let mergedRows;
-  if (showSamples) {
-    const sampleMap = new Map(sampleTrend.map(s => [s.month, s]));
-    mergedRows = rows.map(row => ({
-      ...row,
-      sampleAmountRmb: sampleMap.get(row.month)?.amountRmb || 0
-    }));
-    const orderMonths = new Set(rows.map(r => r.month));
-    for (const s of sampleTrend) {
-      if (!orderMonths.has(s.month)) {
-        mergedRows.push({ month: s.month, incomeRmb: 0, totalCostRmb: 0, profitRmb: 0, sampleAmountRmb: s.amountRmb || 0 });
-      }
-    }
-  } else {
-    mergedRows = [...rows];
-  }
-  mergedRows.sort((a, b) => a.month < b.month ? -1 : 1);
-
-  const maxValues = mergedRows.flatMap((row) => [num(row.incomeRmb), num(row.totalCostRmb), Math.abs(num(row.profitRmb))]);
-  if (showSamples) maxValues.push(...mergedRows.map(row => num(row.sampleAmountRmb)));
+  const sorted = [...rows].sort((a, b) => a.month < b.month ? -1 : 1);
+  const maxValues = sorted.flatMap((row) => [num(row.incomeRmb), num(row.totalCostRmb), Math.abs(num(row.profitRmb))]);
   const max = Math.max(1, ...maxValues);
 
   el.className = "analytics-chart";
-  el.innerHTML = mergedRows.map((row) => {
+  el.innerHTML = sorted.map((row) => {
     const incomeH = Math.max(2, Math.round(num(row.incomeRmb) / max * 100));
     const costH = Math.max(2, Math.round(num(row.totalCostRmb) / max * 100));
     const profitH = Math.max(2, Math.round(Math.abs(num(row.profitRmb)) / max * 100));
     const bars = `<span class="trend-bar income" style="height:${incomeH}%"></span>
       <span class="trend-bar cost" style="height:${costH}%"></span>
       <span class="trend-bar profit" style="height:${profitH}%"></span>`;
-    const sampleBar = showSamples ? `<span class="trend-bar sample" style="height:${Math.max(2, Math.round(num(row.sampleAmountRmb) / max * 100))}%"></span>` : "";
-    const tip = showSamples
-      ? `${esc(row.month)} 收入 ${rmb(row.incomeRmb)} / 支出 ${rmb(row.totalCostRmb)} / 利润 ${rmb(row.profitRmb)} / 样品 ${rmb(row.sampleAmountRmb)}`
-      : `${esc(row.month)} 收入 ${rmb(row.incomeRmb)} / 支出 ${rmb(row.totalCostRmb)} / 利润 ${rmb(row.profitRmb)}`;
+    const tip = `${esc(row.month)} 收入 ${rmb(row.incomeRmb)} / 支出 ${rmb(row.totalCostRmb)} / 利润 ${rmb(row.profitRmb)}`;
     return `<div class="trend-month">
-      <div class="trend-bars" title="${tip}">${bars}${sampleBar}</div>
+      <div class="trend-bars" title="${tip}">${bars}</div>
       <b>${esc(row.month)}</b>
     </div>`;
   }).join("");
 }
 
-function renderChannelExpenseChart(channel, expenseBreakdown = [], sampleSummary = {}) {
+function renderChannelExpenseChart(channel, expenseBreakdown = []) {
   const el = $(channel === "shopify" ? "shopifyExpenseChart" : "amazonExpenseChart");
   if (!el) return;
 
   let rows;
   if (channel === "shopify") {
-    // 独立站: 生产成本 + 物流成本 + PayPal 手续费 + 税费 + 样品收入
     rows = expenseBreakdown.filter(r => r.key !== "amazon_commission");
-    if (sampleSummary.totalAmountRmb > 0) {
-      rows.push({ key: "sample", label: "样品收入", amountRmb: sampleSummary.totalAmountRmb });
-    }
   } else {
     // 亚马逊: 生产成本 + 物流成本 + 平台佣金 15%
     const income = analyticsState.amazon?.summary?.incomeRmb || 0;
@@ -449,9 +421,9 @@ function renderChannelProductTable(channel) {
 
 function renderChannelAnalytics(channel) {
   const data = analyticsState[channel] || {};
-  renderChannelSummary(channel, data.summary || {}, data.sampleSummary || {});
-  renderChannelTrendChart(channel, data.monthlyTrend || [], data.sampleMonthlyTrend || []);
-  renderChannelExpenseChart(channel, data.expenseBreakdown || [], data.sampleSummary || {});
+  renderChannelSummary(channel, data.summary || {});
+  renderChannelTrendChart(channel, data.monthlyTrend || []);
+  renderChannelExpenseChart(channel, data.expenseBreakdown || []);
   renderChannelProductTable(channel);
 }
 
@@ -575,57 +547,6 @@ function renderParams(p) {
   if ($("liningTable")) renderTable("liningTable", ["内衬", "颜色", "门幅 cm", "单价", "操作"], p.linings.map((l) => materialRow(l, "lining")));
   if ($("laborTable")) renderTable("laborTable", ["层数", "下限 m", "上限 m", "单价"], p.laborRules.map((r, i) => `<tr data-row-index="${i}"><td><select data-field="layer"><option value="single"${r.layer === "single" ? " selected" : ""}>single</option><option value="double"${r.layer === "double" ? " selected" : ""}>double</option></select></td><td>${input(r.min_m, 'type="number" step="0.01" data-field="min_m"')}</td><td>${input(r.max_m ?? "", 'type="number" step="0.01" data-field="max_m"')}</td><td>${input(r.rate_rmb_per_m, 'type="number" step="0.01" data-field="rate_rmb_per_m"')}</td></tr>`));
   if ($("memoryTable")) renderTable("memoryTable", ["下限 m", "上限 m", "单层价", "双层系数"], p.memoryRules.map((r, i) => `<tr data-row-index="${i}"><td>${input(r.min_m, 'type="number" step="0.01" data-field="min_m"')}</td><td>${input(r.max_m ?? "", 'type="number" step="0.01" data-field="max_m"')}</td><td>${input(r.single_rate_rmb, 'type="number" step="0.01" data-field="single_rate_rmb"')}</td><td>${input(r.double_coef, 'type="number" step="0.01" data-field="double_coef"')}</td></tr>`));
-}
-
-// ===== Factory Samples =====
-function openFactorySamplesModal() {
-  $("factorySamplesModal")?.classList.remove("hidden");
-  loadFactorySamples();
-}
-
-let factorySamplesCache = [];
-
-async function loadFactorySamples() {
-  try {
-    const samples = await json("/api/samples");
-    factorySamplesCache = Array.isArray(samples) ? samples : [];
-    renderFactorySamplesTable();
-  } catch (e) {
-    toast(e.message, "bad");
-  }
-}
-
-function renderFactorySamplesTable() {
-  const table = $("factorySamplesTable");
-  const stats = $("factorySamplesStats");
-  if (!table) return;
-
-  const totalQty = factorySamplesCache.reduce((s, r) => s + (r.quantity || 0), 0);
-  const totalAmount = factorySamplesCache.reduce((s, r) => s + (Number(r.amount_usd) || 0), 0);
-  if (stats) {
-    stats.innerHTML = `<div class="summary-stats">
-      <div class="stat-card"><span class="stat-label">总记录</span><span class="stat-value">${factorySamplesCache.length}</span></div>
-      <div class="stat-card"><span class="stat-label">总数量</span><span class="stat-value">${totalQty}</span></div>
-      <div class="stat-card"><span class="stat-label">总金额</span><span class="stat-value">$${fmt(totalAmount)}</span></div>
-    </div>`;
-  }
-
-  if (!factorySamplesCache.length) {
-    table.innerHTML = '<thead><tr><th>日期</th><th>渠道</th><th>面料</th><th>数量</th><th>金额</th><th>备注</th></tr></thead><tbody><tr><td colspan="6" class="empty-cell">暂无记录</td></tr></tbody>';
-    return;
-  }
-
-  const rows = factorySamplesCache.map(s => {
-    return `<tr>
-      <td>${esc(s.sale_date || "-")}</td>
-      <td>${esc(s.channel === "amazon" ? "亚马逊" : "独立站")}</td>
-      <td>${esc(s.fabric_name)}</td>
-      <td>${s.quantity}</td>
-      <td>$${fmt(s.amount_usd)}</td>
-      <td>${esc(s.remark || "-")}</td>
-    </tr>`;
-  }).join("");
-  table.innerHTML = '<thead><tr><th>日期</th><th>渠道</th><th>面料</th><th>数量</th><th>金额</th><th>备注</th></tr></thead><tbody>' + rows + "</tbody>";
 }
 
 async function loadParams() {
@@ -1030,10 +951,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
   $("summaryRefreshBtn")?.addEventListener("click", () => loadSummary());
-  $("openFactorySamplesBtn")?.addEventListener("click", openFactorySamplesModal);
-  $("closeFactorySamplesModalBtn")?.addEventListener("click", () => $("factorySamplesModal")?.classList.add("hidden"));
-  $("closeFactorySamplesModal")?.addEventListener("click", () => $("factorySamplesModal")?.classList.add("hidden"));
-  $("factorySamplesRefreshBtn")?.addEventListener("click", loadFactorySamples);
   $("summaryExportBtn")?.addEventListener("click", () => {
     const channel = $("summaryChannelFilter")?.value || "";
     const status = $("summaryStatusFilter")?.value || "";

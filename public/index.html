@@ -155,7 +155,6 @@
               <label class="btn secondary small file-pick" for="ordersImportCsvInput">导入订单CSV</label>
               <input id="ordersImportCsvInput" class="hidden-file" type="file" accept=".csv">
               <button class="btn secondary small" id="refreshOrdersBtn">刷新</button>
-              <button class="btn secondary small" id="openSamplesBtn" type="button">面料样品</button>
             </div>
           </div>
         </div>
@@ -429,7 +428,6 @@
                 <span class="trend-legend-item"><span class="trend-legend-color" style="background:var(--chart-income)"></span>收入</span>
                 <span class="trend-legend-item"><span class="trend-legend-color" style="background:var(--chart-cost)"></span>支出</span>
                 <span class="trend-legend-item"><span class="trend-legend-color" style="background:var(--chart-profit)"></span>利润</span>
-                <span class="trend-legend-item"><span class="trend-legend-color" style="background:var(--chart-sample)"></span>样品</span>
               </div>
             </section>
             <section class="analytics-panel">
@@ -558,35 +556,6 @@
         <button class="btn small secondary" id="closeQuoteModalBtn" type="button">关闭</button>
       </div>
       <div id="quoteModalContent"></div>
-    </div>
-  </div>
-
-  <div id="samplesModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="面料样品">
-    <div class="modal-backdrop" id="closeSamplesModal"></div>
-    <div class="modal-panel" style="max-width:720px">
-      <div class="section-title">
-        <h3>面料样品</h3>
-        <div class="toolbar">
-          <button class="btn secondary small" id="samplesRefreshBtn" type="button">刷新</button>
-          <button class="btn primary small" id="samplesAddBtn" type="button">新增记录</button>
-          <button class="btn small secondary" id="closeSamplesModalBtn" type="button">关闭</button>
-        </div>
-      </div>
-      <div id="samplesAddForm" class="samples-add-form hidden">
-        <div class="form-grid compact">
-          <label>面料名称<input id="sampleFabricName" placeholder="面料名称"></label>
-          <label>数量<input id="sampleQty" type="number" min="1" step="1" value="1"></label>
-          <label>金额 (USD)<input id="sampleAmount" type="number" step="0.01" min="0"></label>
-          <label>日期<input id="sampleDate" type="date"></label>
-          <label class="wide">备注<input id="sampleRemark" placeholder="可选"></label>
-        </div>
-        <div class="actions">
-          <button class="btn primary small" id="samplesSaveBtn">保存</button>
-          <button class="btn secondary small" id="samplesCancelBtn">取消</button>
-        </div>
-      </div>
-      <div class="samples-stats" id="samplesStats"></div>
-      <div class="table-wrap"><table id="samplesTable"></table></div>
     </div>
   </div>
 

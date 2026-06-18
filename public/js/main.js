@@ -375,52 +375,6 @@ async function openQuoteModal() {
   $('quoteModal')?.classList.remove('hidden');
 }
 
-function openSamplesModal() {
-  $('samplesModal')?.classList.remove('hidden');
-  loadSamples();
-}
-
-// ===== Sample Sales =====
-let samplesCache = [];
-async function loadSamples() {
-  try {
-    const rows = await api.json('/api/samples');
-    samplesCache = Array.isArray(rows) ? rows : [];
-    renderSamplesTable();
-    renderSamplesStats();
-  } catch (e) { toast(e.message, 'bad'); }
-}
-function renderSamplesTable() {
-  const table = $('samplesTable');
-  if (!table) return;
-  if (!samplesCache.length) {
-    table.innerHTML = '<thead><tr><th>日期</th><th>面料</th><th>数量</th><th>金额</th><th>备注</th><th>操作</th></tr></thead><tbody><tr><td colspan="6" class="empty-cell">暂无记录 — 点击上方按钮添加面料样品记录</td></tr></tbody>';
-    return;
-  }
-  const rows = samplesCache.map(s => {
-    return `<tr>
-      <td>${esc(s.sale_date || '-')}</td>
-      <td>${esc(s.fabric_name)}</td>
-      <td>${s.quantity}</td>
-      <td>${usd(s.amount_usd)}</td>
-      <td>${esc(s.remark || '-')}</td>
-      <td><button class="btn tiny danger" data-delete-sample="${s.id}">删除</button></td>
-    </tr>`;
-  }).join('');
-  table.innerHTML = '<thead><tr><th>日期</th><th>面料</th><th>数量</th><th>金额</th><th>备注</th><th>操作</th></tr></thead><tbody>' + rows + '</tbody>';
-}
-function renderSamplesStats() {
-  const el = $('samplesStats');
-  if (!el) return;
-  const totalQty = samplesCache.reduce((s, r) => s + (r.quantity || 0), 0);
-  const totalAmount = samplesCache.reduce((s, r) => s + (Number(r.amount_usd) || 0), 0);
-  el.innerHTML = `<div class="summary-stats">
-    <div class="stat-card"><span class="stat-label">总记录</span><span class="stat-value">${samplesCache.length}</span></div>
-    <div class="stat-card"><span class="stat-label">总数量</span><span class="stat-value">${totalQty}</span></div>
-    <div class="stat-card"><span class="stat-label">总金额</span><span class="stat-value">${usd(totalAmount)}</span></div>
-  </div>`;
-}
-
 function renderCostDetailModal(calc) {
   const b = calc.costBreakdown || {};
   const lines = [
@@ -2797,7 +2751,7 @@ async function loadAnalytics() {
   }
 }
 
-function renderChannelSummary(channel, summary = {}, sampleSummary = {}) {
+function renderChannelSummary(channel, summary = {}) {
   const el = $(channel === 'shopify' ? 'shopifyAnalyticsSummary' : 'amazonAnalyticsSummary');
   if (!el) return;
   const profitRate = num(summary.profitRate);
@@ -2813,8 +2767,6 @@ function renderChannelSummary(channel, summary = {}, sampleSummary = {}) {
   ];
   if (channel === 'shopify') {
     cards.splice(4, 0, analyticsMetric('PayPal 手续费', rmb(summary.paypalFeeRmb), '', 'border-red'));
-    cards.push(analyticsMetric('样品售出', String(sampleSummary.totalQty || 0), `${sampleSummary.totalRecords || 0} 笔`, 'border-purple'));
-    cards.push(analyticsMetric('样品收入', rmb(sampleSummary.totalAmountRmb || 0), `$${fmt(sampleSummary.totalAmountUsd || 0)}`, 'border-purple'));
   } else {
     const commission = (summary.incomeRmb || 0) * 0.15;
     cards.splice(4, 0, analyticsMetric('平台佣金 (15%)', rmb(commission), '', 'border-red'));
@@ -2822,53 +2774,36 @@ function renderChannelSummary(channel, summary = {}, sampleSummary = {}) {
   el.innerHTML = cards.join('');
 }
 
-function renderChannelTrendChart(channel, rows = [], sampleTrend = []) {
+function renderChannelTrendChart(channel, rows = []) {
   const el = $(channel === 'shopify' ? 'shopifyTrendChart' : 'amazonTrendChart');
   if (!el) return;
-  const showSamples = channel === 'shopify' && sampleTrend.length > 0;
-  if (!rows.length && !showSamples) {
+  if (!rows.length) {
     el.className = 'analytics-chart empty';
     el.textContent = '暂无数据';
     return;
   }
-  let mergedRows;
-  if (showSamples) {
-    const sampleMap = new Map(sampleTrend.map(s => [s.month, s]));
-    mergedRows = rows.map(row => ({ ...row, sampleAmountRmb: sampleMap.get(row.month)?.amountRmb || 0 }));
-    const orderMonths = new Set(rows.map(r => r.month));
-    for (const s of sampleTrend) {
-      if (!orderMonths.has(s.month)) mergedRows.push({ month: s.month, incomeRmb: 0, totalCostRmb: 0, profitRmb: 0, sampleAmountRmb: s.amountRmb || 0 });
-    }
-  } else {
-    mergedRows = [...rows];
-  }
-  mergedRows.sort((a, b) => a.month < b.month ? -1 : 1);
-  const maxValues = mergedRows.flatMap(r => [num(r.incomeRmb), num(r.totalCostRmb), Math.abs(num(r.profitRmb))]);
-  if (showSamples) maxValues.push(...mergedRows.map(r => num(r.sampleAmountRmb)));
+  const sorted = [...rows].sort((a, b) => a.month < b.month ? -1 : 1);
+  const maxValues = sorted.flatMap(r => [num(r.incomeRmb), num(r.totalCostRmb), Math.abs(num(r.profitRmb))]);
   const max = Math.max(1, ...maxValues);
   el.className = 'analytics-chart';
-  el.innerHTML = mergedRows.map(row => {
+  el.innerHTML = sorted.map(row => {
     const incomeH = Math.max(2, Math.round(num(row.incomeRmb) / max * 100));
     const costH = Math.max(2, Math.round(num(row.totalCostRmb) / max * 100));
     const profitH = Math.max(2, Math.round(Math.abs(num(row.profitRmb)) / max * 100));
     const bars = `<span class="trend-bar income" style="height:${incomeH}%"></span>
       <span class="trend-bar cost" style="height:${costH}%"></span>
       <span class="trend-bar profit" style="height:${profitH}%"></span>`;
-    const sampleBar = showSamples ? `<span class="trend-bar sample" style="height:${Math.max(2, Math.round(num(row.sampleAmountRmb) / max * 100))}%"></span>` : '';
-    const tip = showSamples
-      ? `${esc(row.month)} 收入 ${rmb(row.incomeRmb)} / 支出 ${rmb(row.totalCostRmb)} / 利润 ${rmb(row.profitRmb)} / 样品 ${rmb(row.sampleAmountRmb)}`
-      : `${esc(row.month)} 收入 ${rmb(row.incomeRmb)} / 支出 ${rmb(row.totalCostRmb)} / 利润 ${rmb(row.profitRmb)}`;
-    return `<div class="trend-month"><div class="trend-bars" title="${tip}">${bars}${sampleBar}</div><b>${esc(row.month)}</b></div>`;
+    const tip = `${esc(row.month)} 收入 ${rmb(row.incomeRmb)} / 支出 ${rmb(row.totalCostRmb)} / 利润 ${rmb(row.profitRmb)}`;
+    return `<div class="trend-month"><div class="trend-bars" title="${tip}">${bars}</div><b>${esc(row.month)}</b></div>`;
   }).join('');
 }
 
-function renderChannelExpenseChart(channel, expenseBreakdown = [], sampleSummary = {}) {
+function renderChannelExpenseChart(channel, expenseBreakdown = []) {
   const el = $(channel === 'shopify' ? 'shopifyExpenseChart' : 'amazonExpenseChart');
   if (!el) return;
   let rows;
   if (channel === 'shopify') {
     rows = expenseBreakdown.filter(r => r.key !== 'amazon_commission');
-    if (sampleSummary.totalAmountRmb > 0) rows.push({ key: 'sample', label: '样品收入', amountRmb: sampleSummary.totalAmountRmb });
   } else {
     const income = state.analytics.amazon?.summary?.incomeRmb || 0;
     rows = [
@@ -2924,9 +2859,9 @@ function renderChannelProductTable(channel) {
 
 function renderChannelAnalytics(channel) {
   const data = state.analytics[channel] || {};
-  renderChannelSummary(channel, data.summary || {}, data.sampleSummary || {});
-  renderChannelTrendChart(channel, data.monthlyTrend || [], data.sampleMonthlyTrend || []);
-  renderChannelExpenseChart(channel, data.expenseBreakdown || [], data.sampleSummary || {});
+  renderChannelSummary(channel, data.summary || {});
+  renderChannelTrendChart(channel, data.monthlyTrend || []);
+  renderChannelExpenseChart(channel, data.expenseBreakdown || []);
   renderChannelProductTable(channel);
 }
 
@@ -3332,46 +3267,6 @@ function bind() {
   }
   if ($('exportFactoryBtn')) $('exportFactoryBtn').onclick = () => exportCurrentItemsFactory();
 
-  // Samples modal
-  if ($('openSamplesBtn')) $('openSamplesBtn').onclick = openSamplesModal;
-  if ($('closeSamplesModalBtn')) $('closeSamplesModalBtn').onclick = () => $('samplesModal')?.classList.add('hidden');
-  if ($('closeSamplesModal')) $('closeSamplesModal').onclick = () => $('samplesModal')?.classList.add('hidden');
-
-  // Sample sales
-  if ($('samplesRefreshBtn')) $('samplesRefreshBtn').onclick = loadSamples;
-  if ($('samplesAddBtn')) $('samplesAddBtn').onclick = () => {
-    $('samplesAddForm')?.classList.toggle('hidden');
-    if ($('sampleDate') && !$('sampleDate').value) $('sampleDate').value = today();
-  };
-  if ($('samplesCancelBtn')) $('samplesCancelBtn').onclick = () => $('samplesAddForm')?.classList.add('hidden');
-  if ($('samplesSaveBtn')) $('samplesSaveBtn').onclick = async () => {
-    const fabricName = $('sampleFabricName')?.value?.trim();
-    const qty = parseInt($('sampleQty')?.value) || 1;
-    const amount = parseFloat($('sampleAmount')?.value) || 0;
-    const date = $('sampleDate')?.value || '';
-    const remark = $('sampleRemark')?.value?.trim() || '';
-    if (!fabricName) return toast('请输入面料名称', 'warn');
-    try {
-      await api.json('/api/samples', { method: 'POST', body: JSON.stringify({ fabric_name: fabricName, quantity: qty, amount_usd: amount, sale_date: date, remark }) });
-      toast('已保存');
-      $('samplesAddForm')?.classList.add('hidden');
-      $('sampleFabricName').value = '';
-      $('sampleQty').value = '1';
-      $('sampleAmount').value = '';
-      $('sampleRemark').value = '';
-      await loadSamples();
-    } catch (e) { toast(e.message, 'bad'); }
-  };
-  if ($('samplesTable')) $('samplesTable').addEventListener('click', async (e) => {
-    const btn = e.target.closest('[data-delete-sample]');
-    if (!btn) return;
-    if (!confirm('确认删除此记录？')) return;
-    try {
-      await api.json(`/api/samples/${btn.dataset.deleteSample}`, { method: 'DELETE' });
-      toast('已删除');
-      await loadSamples();
-    } catch (e) { toast(e.message, 'bad'); }
-  });
   if ($('editProductSelect')) $('editProductSelect').onchange = loadProductEditor;
   if ($('addProductBtn')) $('addProductBtn').onclick = () => {
     const modal = $('newProductModal');
@@ -3482,8 +3377,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   bind();
   try { await loadAll(); renderCurrentItems(); await calcSplice(); toast('已连接服务器数据库'); } catch (e) { toast(e.message, 'bad'); }
   if (ORDER_CHANNEL === 'amazon') {
-    const samplesBtn = $('openSamplesBtn');
-    if (samplesBtn) samplesBtn.style.display = 'none';
     const taxTab = document.querySelector('nav button[data-tab="tax"]');
     if (taxTab) taxTab.style.display = 'none';
     const shopifySection = $('analyticsShopifySection');

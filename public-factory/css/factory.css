@@ -61,7 +61,6 @@
   --chart-income: #2C4A7C;
   --chart-cost: #8B5E3C;
   --chart-profit: #3A7CA5;
-  --chart-sample: #A0AEC0;
   --chart-income-light: rgba(44,74,124,.10);
   --chart-cost-light: rgba(139,94,60,.08);
   --chart-profit-light: rgba(58,124,165,.08);
@@ -1469,7 +1468,6 @@ td input, td select {
 .trend-bar.income { background: var(--brand) }
 .trend-bar.cost { background: var(--warn) }
 .trend-bar.profit { background: var(--good) }
-.trend-bar.sample { background: var(--chart-sample) }
 .trend-legend {
   display: flex;
   gap: 16px;
