@@ -1005,7 +1005,8 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
 }
 .form-grid + .actions,
 .custom-options-layout + .actions,
-.order-preview-layout + .actions {
+.order-preview-layout + .actions,
+.table-wrap + .actions {
   padding-top: 16px;
   border-top: 1px solid var(--line-light);
   margin-top: 18px;
