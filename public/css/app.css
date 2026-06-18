@@ -1011,8 +1011,8 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
   margin-top: 18px;
 }
 .table-wrap + .actions {
-  padding-top: 16px;
-  margin-top: 18px;
+  padding-top: 12px;
+  margin-top: 12px;
 }
 
 /* ===== Preview Controls ===== */
