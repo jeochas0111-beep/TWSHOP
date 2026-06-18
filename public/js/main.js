@@ -1091,8 +1091,6 @@ function renderOptionQuoteList(product = activeProduct()) {
   const list = $('optionQuoteList');
   if (!list) return;
   const rows = selectedOptionRows(product).filter(r => r.value);
-  const total = rows.reduce((sum, r) => sum + r.priceUsd, 0);
-  if ($('optionQuoteTotal')) $('optionQuoteTotal').textContent = usd(total);
   if (!rows.length) {
     list.innerHTML = '<div class="option-quote-empty">选择产品后显示选项报价</div>';
     return;
