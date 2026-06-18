@@ -1349,6 +1349,27 @@ function renderOrdersBulkBar() {
   if ($('ordersSelectedCount')) $('ordersSelectedCount').textContent = `已选 ${selected.length} 项`;
   $('ordersBulkBar')?.classList.toggle('hidden', selected.length === 0);
 }
+function closeAllOrderMenus() {
+  document.querySelectorAll('.order-action-menu.open').forEach(m => m.classList.remove('open'));
+}
+async function exportSingleFactoryOrder(order) {
+  try {
+    const res = await fetch('/api/export/factory-orders-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [String(order.id)] })
+    });
+    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || '导出失败'); }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `工厂生产单-${order.order_no || order.id}-${today()}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('已导出生产单');
+  } catch (e) { toast(e.message, 'bad'); }
+}
 async function exportSelectedOrdersFactory() {
   const ids = Array.from(state.selectedOrderIds || []);
   if (!ids.length) return toast('请先选择订单', 'bad');
@@ -1460,7 +1481,8 @@ function renderOrdersPanel() {
     '交期',
     '项目',
     '小计',
-    '状态'
+    '状态',
+    ''
   ];
   const body = pageRows.length ? pageRows.flatMap((o, i) => {
     const items = o.items || [];
@@ -1510,9 +1532,18 @@ function renderOrdersPanel() {
           <option value="completed"${status.key === 'completed' ? ' selected' : ''}>完成</option>
         </select>
       </td>
+      <td class="order-row-actions">
+        <button class="order-action-trigger" data-order-menu="${o.id}" type="button" title="操作">⋯</button>
+        <div class="order-action-menu" id="orderMenu-${o.id}">
+          <button data-view-modal="${o.id}" ${totalCount ? '' : 'disabled'}>查看详情</button>
+          <button data-export-row="${o.id}">导出生产单</button>
+          <div class="menu-divider"></div>
+          <button class="danger" data-delete-order="${o.id}">删除订单</button>
+        </div>
+      </td>
     </tr>`;
     return [headerRow];
-  }) : ['<tr><td colspan="8" class="empty-cell">未找到匹配的订单</td></tr>'];
+  }) : ['<tr><td colspan="9" class="empty-cell">未找到匹配的订单</td></tr>'];
   table($('ordersTable'), headers, body);
   const visibleIds = pageRows.map(o => String(o.id));
   if ($('ordersCheckAll')) {
@@ -1551,8 +1582,50 @@ function renderOrdersPanel() {
     };
   });
   document.querySelectorAll('[data-view-modal]').forEach(btn => {
-    btn.onclick = () => viewOrderModal(btn.dataset.viewModal, 'view');
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      viewOrderModal(btn.dataset.viewModal, 'view');
+      closeAllOrderMenus();
+    };
   });
+  // Per-row action dropdown
+  document.querySelectorAll('[data-order-menu]').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.orderMenu;
+      const menu = document.getElementById('orderMenu-' + id);
+      const wasOpen = menu.classList.contains('open');
+      closeAllOrderMenus();
+      if (!wasOpen) menu.classList.add('open');
+    };
+  });
+  document.querySelectorAll('[data-export-row]').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      closeAllOrderMenus();
+      const orderId = btn.dataset.exportRow;
+      const order = (state.ordersCache || []).find(o => String(o.id) === String(orderId));
+      if (order) exportSingleFactoryOrder(order);
+    };
+  });
+  document.querySelectorAll('[data-delete-order]').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      closeAllOrderMenus();
+      const orderId = btn.dataset.deleteOrder;
+      if (!confirm('确定要删除此订单吗？此操作不可撤销。')) return;
+      try {
+        await api.json(`/api/orders/${orderId}`, { method: 'DELETE' });
+        state.ordersCache = (state.ordersCache || []).filter(o => String(o.id) !== String(orderId));
+        state.selectedOrderIds.delete(String(orderId));
+        renderOrdersPanel();
+        renderOrdersBulkBar();
+        toast('订单已删除');
+      } catch (err) { toast(err.message, 'bad'); }
+    };
+  });
+  // Close menus on outside click
+  document.addEventListener('click', closeAllOrderMenus, { once: true });
   if ($('ordersPager')) {
     $('ordersPager').innerHTML = `
       <span>共 ${all.length} 条</span>

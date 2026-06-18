@@ -1167,16 +1167,78 @@ hr { border: 0; border-top: 1px solid var(--line-light); margin: 16px 0 }
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  border: 1px solid var(--line-light);
-  border-radius: var(--radius-lg);
-  background: var(--brand-light);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  background: var(--accent-light);
   color: var(--brand2);
-  padding: 10px 12px;
+  padding: 8px 12px;
   margin-bottom: 10px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   box-shadow: none;
 }
 .orders-bulk-bar .btn { width: auto }
+
+/* ===== Order Row Hover ===== */
+.orders-data-table tbody tr { transition: background .12s var(--ease) }
+.orders-data-table tbody tr:hover td { background: rgba(0,0,0,.02) }
+.orders-data-table tbody tr:hover td:first-child { background: inherit }
+
+/* ===== Per-Row Action Dropdown ===== */
+.order-row-actions { position: relative; width: 32px; min-width: 32px; text-align: center }
+.order-action-trigger {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.order-action-trigger:hover { background: var(--surface); color: var(--ink); border-color: var(--line-light) }
+.order-action-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 50;
+  min-width: 140px;
+  background: var(--card);
+  border: 1px solid var(--line-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 4px;
+  margin-top: 2px;
+}
+.order-action-menu.open { display: block }
+.order-action-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  transition: background .1s;
+}
+.order-action-menu button:hover { background: var(--surface) }
+.order-action-menu button.danger { color: var(--bad) }
+.order-action-menu button.danger:hover { background: var(--bad-bg) }
+.order-action-menu .menu-divider { height: 1px; background: var(--line-light); margin: 4px 0 }
 
 .orders-data-table table { min-width: 980px }
 .feedback-data-table table { min-width: 1120px }
