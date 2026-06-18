@@ -1356,50 +1356,59 @@ td input, td select {
   gap: 10px 12px;
   align-items: end;
   padding: 14px 16px;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  background: var(--glass-bg);
-  backdrop-filter: saturate(140%) blur(16px);
-  -webkit-backdrop-filter: saturate(140%) blur(16px);
+  border: 1px solid rgba(226,232,240,0.8);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.80);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
   margin-bottom: 14px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
 }
 .analytics-summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
 }
 .analytics-metric-card {
-  min-height: 92px;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg);
-  padding: 13px 14px;
-  box-shadow: var(--shadow);
-  backdrop-filter: saturate(140%) blur(12px);
-  -webkit-backdrop-filter: saturate(140%) blur(12px);
+  position: relative;
+  min-height: 96px;
+  border: 1px solid rgba(226,232,240,0.8);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.86);
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  transition: all .15s cubic-bezier(.25,.1,.25,1);
+}
+.analytics-metric-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+  border-color: rgba(203,213,225,0.8);
 }
 .analytics-metric-card span {
   display: block;
   color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .04em;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .02em;
   text-transform: uppercase;
 }
 .analytics-metric-card b {
   display: block;
   margin-top: 8px;
   color: var(--ink);
-  font-size: 22px;
-  font-weight: 800;
+  font-size: 24px;
+  font-weight: 700;
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
 }
 .analytics-metric-card small {
   display: block;
-  margin-top: 4px;
+  margin-top: 6px;
   color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 .analytics-grid {
   display: grid;
@@ -1409,10 +1418,17 @@ td input, td select {
 }
 .analytics-panel {
   min-width: 0;
-  border: 1px solid var(--line-light);
-  border-radius: var(--radius-lg);
-  background: var(--card);
-  padding: 14px;
+  border: 1px solid rgba(226,232,240,0.8);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.86);
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  transition: box-shadow .15s cubic-bezier(.25,.1,.25,1);
+}
+.analytics-panel:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
 }
 .analytics-panel-wide { grid-row: span 2 }
 .analytics-chart {
@@ -1421,8 +1437,12 @@ td input, td select {
   align-items: end;
   gap: 10px;
   overflow-x: auto;
-  padding: 10px 4px 2px;
+  padding: 12px 4px 2px;
+  scrollbar-width: thin;
 }
+.analytics-chart::-webkit-scrollbar { height: 4px }
+.analytics-chart::-webkit-scrollbar-track { background: transparent }
+.analytics-chart::-webkit-scrollbar-thumb { background: var(--line-light); border-radius: 2px }
 .trend-month {
   flex: 0 0 68px;
   display: grid;
@@ -1436,13 +1456,16 @@ td input, td select {
   justify-content: center;
   gap: 5px;
   height: 220px;
-  border-bottom: 1px solid var(--line-light);
+  border-bottom: 1px solid rgba(226,232,240,0.6);
 }
 .trend-bar {
-  width: 12px;
-  min-height: 2px;
-  border-radius: 999px 999px 0 0;
+  width: 14px;
+  min-height: 3px;
+  border-radius: 6px 6px 0 0;
+  transition: opacity .15s ease;
 }
+.trend-bars:hover .trend-bar { opacity: .65 }
+.trend-bars:hover .trend-bar:hover { opacity: 1 }
 .trend-bar.income { background: var(--brand) }
 .trend-bar.cost { background: var(--warn) }
 .trend-bar.profit { background: var(--good) }
@@ -1450,17 +1473,19 @@ td input, td select {
 .trend-legend {
   display: flex;
   gap: 16px;
-  padding: 8px 0 0;
+  padding: 10px 0 0;
   font-size: 12px;
   color: var(--muted);
+  border-top: 1px solid rgba(226,232,240,0.5);
+  margin-top: 8px;
 }
-.trend-legend-item { display: flex; align-items: center; gap: 4px }
-.trend-legend-color { display: inline-block; width: 10px; height: 10px; border-radius: 2px }
-.trend-month b { color: var(--muted); font-size: 11px; font-weight: 600 }
+.trend-legend-item { display: flex; align-items: center; gap: 5px }
+.trend-legend-color { display: inline-block; width: 10px; height: 10px; border-radius: 3px }
+.trend-month b { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .01em }
 .analytics-expense-chart,
-.analytics-channel-chart { display: grid; gap: 12px }
+.analytics-channel-chart { display: grid; gap: 14px }
 .expense-row,
-.channel-row { display: grid; gap: 6px }
+.channel-row { display: grid; gap: 7px }
 .expense-row-head,
 .channel-row-head {
   display: flex;
@@ -1472,42 +1497,51 @@ td input, td select {
 .expense-row-head span,
 .channel-row-head span { color: var(--ink); font-weight: 600 }
 .expense-row-head b,
-.channel-row-head b { color: var(--ink); font-size: 12px }
+.channel-row-head b { color: var(--ink); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums }
 .expense-track {
-  height: 9px;
+  height: 10px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--surface-alt);
+  background: rgba(226,232,240,0.5);
 }
 .expense-track span {
   display: block;
   height: 100%;
   border-radius: inherit;
   background: var(--brand);
+  transition: width .3s cubic-bezier(.25,.1,.25,1);
 }
 .expense-row small,
-.channel-row small { color: var(--muted); font-size: 12px }
+.channel-row small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums }
 .analytics-sort-label { min-width: 150px }
 .analytics-sort-label select {
   background-color: rgba(255,255,255,.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+.analytics-table-wrap {
+  border: 1px solid rgba(226,232,240,0.8);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.92);
+}
 .analytics-table-wrap table { min-width: 980px }
 .analytics-table-wrap td strong,
 .analytics-table-wrap td small { display: block }
 .analytics-table-wrap td small { color: var(--muted); margin-top: 2px }
+.analytics-table-wrap td { font-variant-numeric: tabular-nums }
 .empty.analytics-chart,
 .empty.analytics-expense-chart,
 .empty.analytics-channel-chart {
-  min-height: 160px;
+  min-height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--muted);
-  border: 1px dashed var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
+  font-size: 13px;
+  border: 1px dashed rgba(226,232,240,0.8);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.5);
 }
 
 /* ===== Channel Toggle ===== */
@@ -1515,14 +1549,16 @@ td input, td select {
   display: inline-flex;
   gap: 2px;
   padding: 3px;
-  border: 1px solid var(--line-light);
+  border: 1px solid rgba(226,232,240,0.8);
   border-radius: 10px;
-  background: var(--surface);
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .analytics-channel-btn {
   min-height: 34px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   background: transparent;
   color: var(--muted);
   padding: 7px 18px;
@@ -1530,17 +1566,19 @@ td input, td select {
   font-size: 13px;
   font-weight: 600;
   line-height: 1.1;
-  transition: background .15s var(--ease), color .15s var(--ease);
+  transition: all .15s cubic-bezier(.25,.1,.25,1);
 }
-.analytics-channel-btn:hover { background: var(--surface-highlight); color: var(--ink) }
-.analytics-channel-btn.active { background: var(--brand); color: #fff }
+.analytics-channel-btn:hover { background: rgba(0,0,0,.04); color: var(--ink) }
+.analytics-channel-btn.active { background: var(--brand); color: #fff; box-shadow: 0 1px 4px rgba(0,122,255,.25); }
 
 /* ===== Channel-specific Sections ===== */
 .channel-section {
-  border: 1px solid var(--line-light);
-  border-radius: var(--radius-lg);
+  border: 1px solid rgba(226,232,240,0.8);
+  border-radius: 16px;
   padding: 18px;
-  background: var(--surface);
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
   display: grid;
   gap: 14px;
 }
@@ -1549,8 +1587,8 @@ td input, td select {
   font-size: 15px;
   font-weight: 600;
   color: var(--ink);
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line-light);
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(226,232,240,0.6);
 }
 .channel-section .analytics-grid {
   display: grid;
@@ -1560,10 +1598,11 @@ td input, td select {
 }
 .channel-section .analytics-panel-wide { grid-row: span 1 }
 .channel-section .product-analytics-panel {
-  border: 1px solid var(--line-light);
-  border-radius: var(--radius-lg);
-  background: var(--card);
-  padding: 14px;
+  border: 1px solid rgba(226,232,240,0.8);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.86);
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
 
 /* ===== Responsive ===== */
@@ -1633,6 +1672,8 @@ td input, td select {
   .analytics-chart { min-height: 220px }
   .trend-month { grid-template-rows: 170px auto }
   .trend-bars { height: 170px }
+  .analytics-metric-card { min-height: 80px; padding: 12px }
+  .analytics-metric-card b { font-size: 20px }
 }
 
 @media (max-width: 480px) {
@@ -1649,7 +1690,8 @@ td input, td select {
     transition-duration: 0.01ms !important;
   }
   .topbar, .modal-panel, .notify-panel, .tools-dropdown-menu, .order-action-menu,
-  .orders-filter-panel, .analytics-filters, nav, .tab-nav, .btn.secondary {
+  .orders-filter-panel, .analytics-filters, .analytics-metric-card, .analytics-panel,
+  .channel-section, nav, .tab-nav, .btn.secondary {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -1662,10 +1704,14 @@ td input, td select {
     backdrop-filter: saturate(120%) blur(12px);
     -webkit-backdrop-filter: saturate(120%) blur(12px);
   }
+  .analytics-metric-card, .analytics-panel, .channel-section {
+    backdrop-filter: saturate(120%) blur(10px);
+    -webkit-backdrop-filter: saturate(120%) blur(10px);
+  }
   .orders-filter-panel, .analytics-filters {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: var(--card);
+    background: rgba(255,255,255,.95);
   }
   nav, .tab-nav {
     backdrop-filter: none;
@@ -1687,6 +1733,9 @@ td input, td select {
   .order-action-menu { background: rgba(255,255,255,.97) }
   .orders-filter-panel { background: rgba(255,255,255,.95) }
   .analytics-filters { background: rgba(255,255,255,.95) }
+  .analytics-metric-card { background: rgba(255,255,255,.95) }
+  .analytics-panel { background: rgba(255,255,255,.95) }
+  .channel-section { background: rgba(255,255,255,.95) }
   .btn.secondary { background: rgba(255,255,255,.95) }
   select, .filter-field select { background: rgba(255,255,255,.95) }
 }
