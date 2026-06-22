@@ -1,0 +1,357 @@
+{
+  "name": "shopify",
+  "description": "Shopify Admin API tools - direct access to your Shopify store",
+  "resources": [],
+  "groups": [
+    {
+      "name": "shopify_auth",
+      "tools": [
+        {
+          "name": "shopify_login", "method": "SHOPIFY_LOGIN", "path": "",
+          "desc": "[WRITE] Configure Shopify connection. Provide your shop domain and Admin API access token. The token will be saved locally for future sessions.",
+          "params": {
+            "shop_domain": { "type": "string", "desc": "Your Shopify shop domain (e.g. my-store.myshopify.com)" },
+            "access_token": { "type": "string", "desc": "Admin API access token from your custom app" }
+          }
+        },
+        {
+          "name": "shopify_status", "method": "SHOPIFY_STATUS", "path": "",
+          "desc": "Check Shopify connection status and test the API connection"
+        }
+      ]
+    },
+    {
+      "name": "shopify_shop",
+      "tools": [
+        { "name": "shopify_get_shop", "method": "SHOPIFY_GET", "path": "/shop.json", "desc": "Get shop information (name, domain, plan, etc.)" }
+      ]
+    },
+    {
+      "name": "shopify_orders",
+      "tools": [
+        {
+          "name": "shopify_list_orders", "method": "SHOPIFY_GET", "path": "/orders.json",
+          "desc": "List Shopify orders with optional filters",
+          "params": {
+            "status": { "type": "string", "optional": true, "desc": "Filter: any, open, closed, cancelled, archived" },
+            "financial_status": { "type": "string", "optional": true, "desc": "Filter: authorized, paid, partially_paid, pending, refunded, voided, partially_refunded, unpaid, advanced" },
+            "fulfillment_status": { "type": "string", "optional": true, "desc": "Filter: unfulfilled, partial, fulfilled, restocked" },
+            "limit": { "type": "number", "optional": true, "desc": "Max results (1-250, default 50)" },
+            "created_at_min": { "type": "string", "optional": true, "desc": "Filter orders created after (ISO 8601)" },
+            "created_at_max": { "type": "string", "optional": true, "desc": "Filter orders created before (ISO 8601)" },
+            "since_id": { "type": "number", "optional": true, "desc": "Return orders with id > since_id" },
+            "sort_by": { "type": "string", "optional": true, "desc": "Sort: created_at, updated_at, total_price" }
+          }
+        },
+        {
+          "name": "shopify_get_order", "method": "SHOPIFY_GET", "path": "/orders/{id}.json",
+          "desc": "Get a single Shopify order with full details",
+          "params": { "id": { "type": "number", "desc": "Order ID" } }
+        },
+        {
+          "name": "shopify_create_order", "method": "SHOPIFY_POST", "path": "/orders.json",
+          "desc": "[WRITE] Create a new Shopify order (draft order)",
+          "params": {
+            "line_items": { "type": "array", "desc": "Order line items [{variant_id, quantity, price}]", "items": { "type": "object" } },
+            "customer": { "type": "object", "optional": true, "desc": "{id} or {email, first_name, last_name}" },
+            "shipping_address": { "type": "object", "optional": true },
+            "note": { "type": "string", "optional": true },
+            "tags": { "type": "string", "optional": true },
+            "financial_status": { "type": "string", "optional": true },
+            "fulfillment_status": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "shopify_update_order", "method": "SHOPIFY_PUT", "path": "/orders/{id}.json",
+          "desc": "[WRITE] Update an existing Shopify order",
+          "params": {
+            "id": { "type": "number", "desc": "Order ID" },
+            "note": { "type": "string", "optional": true },
+            "tags": { "type": "string", "optional": true },
+            "shipping_address": { "type": "object", "optional": true },
+            "financial_status": { "type": "string", "optional": true },
+            "fulfillment_status": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "shopify_cancel_order", "method": "SHOPIFY_POST", "path": "/orders/{id}/cancel.json",
+          "desc": "[WRITE] Cancel a Shopify order",
+          "params": {
+            "id": { "type": "number", "desc": "Order ID" },
+            "reason": { "type": "string", "optional": true, "desc": "Cancellation reason" },
+            "refund": { "type": "boolean", "optional": true, "desc": "Whether to refund" },
+            "restock": { "type": "boolean", "optional": true, "desc": "Whether to restock items" }
+          }
+        },
+        {
+          "name": "shopify_close_order", "method": "SHOPIFY_POST", "path": "/orders/{id}/close.json",
+          "desc": "[WRITE] Close a Shopify order",
+          "params": { "id": { "type": "number", "desc": "Order ID" } }
+        },
+        {
+          "name": "shopify_reopen_order", "method": "SHOPIFY_POST", "path": "/orders/{id}/open.json",
+          "desc": "[WRITE] Reopen a closed Shopify order",
+          "params": { "id": { "type": "number", "desc": "Order ID" } }
+        }
+      ]
+    },
+    {
+      "name": "shopify_order_transactions",
+      "tools": [
+        {
+          "name": "shopify_list_order_transactions", "method": "SHOPIFY_GET", "path": "/orders/{order_id}/transactions.json",
+          "desc": "List all transactions for an order",
+          "params": { "order_id": { "type": "number", "desc": "Order ID" } }
+        }
+      ]
+    },
+    {
+      "name": "shopify_fulfillments",
+      "tools": [
+        {
+          "name": "shopify_list_order_fulfillments", "method": "SHOPIFY_GET", "path": "/orders/{order_id}/fulfillments.json",
+          "desc": "List fulfillments for an order",
+          "params": { "order_id": { "type": "number", "desc": "Order ID" } }
+        },
+        {
+          "name": "shopify_create_fulfillment", "method": "SHOPIFY_POST", "path": "/orders/{order_id}/fulfillments.json",
+          "desc": "[WRITE] Create a fulfillment for an order",
+          "params": {
+            "order_id": { "type": "number", "desc": "Order ID" },
+            "line_items": { "type": "array", "desc": "Fulfillment line items [{id, quantity}]", "items": { "type": "object" } },
+            "tracking_number": { "type": "string", "optional": true },
+            "tracking_company": { "type": "string", "optional": true },
+            "tracking_url": { "type": "string", "optional": true },
+            "notify_customer": { "type": "boolean", "optional": true }
+          }
+        }
+      ]
+    },
+    {
+      "name": "shopify_products",
+      "tools": [
+        {
+          "name": "shopify_list_products", "method": "SHOPIFY_GET", "path": "/products.json",
+          "desc": "List Shopify products",
+          "params": {
+            "limit": { "type": "number", "optional": true, "desc": "Max results (1-250)" },
+            "status": { "type": "string", "optional": true, "desc": "active, draft, archived" },
+            "vendor": { "type": "string", "optional": true },
+            "product_type": { "type": "string", "optional": true },
+            "collection_id": { "type": "number", "optional": true },
+            "since_id": { "type": "number", "optional": true },
+            "title": { "type": "string", "optional": true, "desc": "Filter by product title" }
+          }
+        },
+        {
+          "name": "shopify_get_product", "method": "SHOPIFY_GET", "path": "/products/{id}.json",
+          "desc": "Get a single Shopify product with variants and images",
+          "params": { "id": { "type": "number", "desc": "Product ID" } }
+        },
+        {
+          "name": "shopify_create_product", "method": "SHOPIFY_POST", "path": "/products.json",
+          "desc": "[WRITE] Create a new Shopify product",
+          "params": {
+            "title": { "type": "string", "desc": "Product title" },
+            "body_html": { "type": "string", "optional": true, "desc": "Product description (HTML)" },
+            "vendor": { "type": "string", "optional": true },
+            "product_type": { "type": "string", "optional": true },
+            "tags": { "type": "string", "optional": true },
+            "status": { "type": "string", "optional": true, "desc": "active, draft, archived" },
+            "variants": { "type": "array", "optional": true, "desc": "Product variants [{title, price, sku, inventory_quantity}]", "items": { "type": "object" } },
+            "options": { "type": "array", "optional": true, "desc": "Product options [{name, values}]", "items": { "type": "object" } }
+          }
+        },
+        {
+          "name": "shopify_update_product", "method": "SHOPIFY_PUT", "path": "/products/{id}.json",
+          "desc": "[WRITE] Update a Shopify product",
+          "params": {
+            "id": { "type": "number", "desc": "Product ID" },
+            "title": { "type": "string", "optional": true },
+            "body_html": { "type": "string", "optional": true },
+            "vendor": { "type": "string", "optional": true },
+            "product_type": { "type": "string", "optional": true },
+            "tags": { "type": "string", "optional": true },
+            "status": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "shopify_delete_product", "method": "SHOPIFY_DELETE", "path": "/products/{id}.json",
+          "desc": "[WRITE] Delete a Shopify product",
+          "params": { "id": { "type": "number", "desc": "Product ID" } }
+        }
+      ]
+    },
+    {
+      "name": "shopify_variants",
+      "tools": [
+        {
+          "name": "shopify_list_product_variants", "method": "SHOPIFY_GET", "path": "/products/{product_id}/variants.json",
+          "desc": "List all variants for a product",
+          "params": { "product_id": { "type": "number", "desc": "Product ID" } }
+        },
+        {
+          "name": "shopify_create_product_variant", "method": "SHOPIFY_POST", "path": "/products/{product_id}/variants.json",
+          "desc": "[WRITE] Create a new variant for a product",
+          "params": {
+            "product_id": { "type": "number", "desc": "Product ID" },
+            "title": { "type": "string", "desc": "Variant title" },
+            "price": { "type": "string", "desc": "Variant price" },
+            "sku": { "type": "string", "optional": true },
+            "inventory_quantity": { "type": "number", "optional": true },
+            "option1": { "type": "string", "optional": true },
+            "option2": { "type": "string", "optional": true },
+            "option3": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "shopify_update_variant", "method": "SHOPIFY_PUT", "path": "/products/{product_id}/variants/{id}.json",
+          "desc": "[WRITE] Update a product variant",
+          "params": {
+            "product_id": { "type": "number", "desc": "Product ID" },
+            "id": { "type": "number", "desc": "Variant ID" },
+            "price": { "type": "string", "optional": true },
+            "sku": { "type": "string", "optional": true },
+            "inventory_quantity": { "type": "number", "optional": true },
+            "title": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "shopify_delete_variant", "method": "SHOPIFY_DELETE", "path": "/products/{product_id}/variants/{id}.json",
+          "desc": "[WRITE] Delete a product variant",
+          "params": {
+            "product_id": { "type": "number", "desc": "Product ID" },
+            "id": { "type": "number", "desc": "Variant ID" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "shopify_inventory",
+      "tools": [
+        {
+          "name": "shopify_list_inventory_levels", "method": "SHOPIFY_GET", "path": "/inventory_levels.json",
+          "desc": "List inventory levels for a location",
+          "params": {
+            "location_ids": { "type": "string", "optional": true, "desc": "Comma-separated location IDs" },
+            "inventory_item_ids": { "type": "string", "optional": true, "desc": "Comma-separated inventory item IDs" },
+            "limit": { "type": "number", "optional": true }
+          }
+        },
+        {
+          "name": "shopify_adjust_inventory", "method": "SHOPIFY_POST", "path": "/inventory_levels/adjust.json",
+          "desc": "[WRITE] Adjust inventory level at a location",
+          "params": {
+            "location_id": { "type": "number", "desc": "Location ID" },
+            "inventory_item_id": { "type": "number", "desc": "Inventory item ID" },
+            "available": { "type": "number", "desc": "Adjustment amount (positive to add, negative to subtract)" }
+          }
+        },
+        {
+          "name": "shopify_set_inventory", "method": "SHOPIFY_POST", "path": "/inventory_levels/set.json",
+          "desc": "[WRITE] Set inventory level at a location",
+          "params": {
+            "location_id": { "type": "number", "desc": "Location ID" },
+            "inventory_item_id": { "type": "number", "desc": "Inventory item ID" },
+            "available": { "type": "number", "desc": "New available quantity" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "shopify_customers",
+      "tools": [
+        {
+          "name": "shopify_list_customers", "method": "SHOPIFY_GET", "path": "/customers.json",
+          "desc": "List Shopify customers",
+          "params": {
+            "limit": { "type": "number", "optional": true },
+            "email": { "type": "string", "optional": true, "desc": "Filter by email" },
+            "first_name": { "type": "string", "optional": true },
+            "last_name": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "shopify_get_customer", "method": "SHOPIFY_GET", "path": "/customers/{id}.json",
+          "desc": "Get a single customer with order history",
+          "params": { "id": { "type": "number", "desc": "Customer ID" } }
+        },
+        {
+          "name": "shopify_search_customers", "method": "SHOPIFY_GET", "path": "/customers/search.json",
+          "desc": "Search customers by query",
+          "params": {
+            "q": { "type": "string", "desc": "Search query (e.g. email, name)" },
+            "limit": { "type": "number", "optional": true }
+          }
+        }
+      ]
+    },
+    {
+      "name": "shopify_draft_orders",
+      "tools": [
+        {
+          "name": "shopify_list_draft_orders", "method": "SHOPIFY_GET", "path": "/draft_orders.json",
+          "desc": "List draft orders",
+          "params": {
+            "status": { "type": "string", "optional": true, "desc": "open, completed, invoice_sent" },
+            "limit": { "type": "number", "optional": true }
+          }
+        },
+        {
+          "name": "shopify_get_draft_order", "method": "SHOPIFY_GET", "path": "/draft_orders/{id}.json",
+          "desc": "Get a single draft order",
+          "params": { "id": { "type": "number", "desc": "Draft order ID" } }
+        },
+        {
+          "name": "shopify_create_draft_order", "method": "SHOPIFY_POST", "path": "/draft_orders.json",
+          "desc": "[WRITE] Create a draft order",
+          "params": {
+            "line_items": { "type": "array", "desc": "Line items [{variant_id, quantity, price}]", "items": { "type": "object" } },
+            "customer": { "type": "object", "optional": true },
+            "shipping_address": { "type": "object", "optional": true },
+            "note": { "type": "string", "optional": true },
+            "tags": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "shopify_complete_draft_order", "method": "SHOPIFY_PUT", "path": "/draft_orders/{id}/complete.json",
+          "desc": "[WRITE] Complete a draft order (creates a real order)",
+          "params": { "id": { "type": "number", "desc": "Draft order ID" } }
+        },
+        {
+          "name": "shopify_delete_draft_order", "method": "SHOPIFY_DELETE", "path": "/draft_orders/{id}.json",
+          "desc": "[WRITE] Delete a draft order",
+          "params": { "id": { "type": "number", "desc": "Draft order ID" } }
+        }
+      ]
+    },
+    {
+      "name": "shopify_locations",
+      "tools": [
+        {
+          "name": "shopify_list_locations", "method": "SHOPIFY_GET", "path": "/locations.json",
+          "desc": "List all shop locations"
+        }
+      ]
+    },
+    {
+      "name": "shopify_analytics",
+      "tools": [
+        {
+          "name": "shopify_get_orders_count", "method": "SHOPIFY_GET", "path": "/orders/count.json",
+          "desc": "Get total order count with optional filters",
+          "params": {
+            "status": { "type": "string", "optional": true },
+            "financial_status": { "type": "string", "optional": true },
+            "created_at_min": { "type": "string", "optional": true },
+            "created_at_max": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "shopify_get_products_count", "method": "SHOPIFY_GET", "path": "/products/count.json",
+          "desc": "Get total product count"
+        }
+      ]
+    }
+  ]
+}

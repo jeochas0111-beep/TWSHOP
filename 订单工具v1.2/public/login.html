@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TWODRAPES ERP - 登录</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230b6dff'/%3E%3Cpath d='M18 18h28v8H36v20h-8V26H18z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/app.css?v=20260619-login-unified">
+  <link rel="stylesheet" href="/css/twodrapes-theme.css">
+  <script src="/js/channel-theme.js"></script>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(64, 156, 255, 0.14), transparent 30%),
+        radial-gradient(circle at top right, rgba(104, 89, 255, 0.12), transparent 28%),
+        linear-gradient(180deg, #f7f9fc 0%, #eef2f7 100%);
+    }
+    .login-shell {
+      width: min(100%, 440px);
+      padding: 34px 30px 28px;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,.72);
+      background: rgba(255,255,255,.82);
+      box-shadow:
+        0 28px 80px rgba(15,23,42,.12),
+        inset 0 1px 0 rgba(255,255,255,.82);
+      backdrop-filter: blur(24px) saturate(155%);
+      -webkit-backdrop-filter: blur(24px) saturate(155%);
+    }
+    .login-brand {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+    .login-brand-badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 28px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(214,223,237,.94);
+      background: rgba(255,255,255,.72);
+      color: #4b5d77;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    .login-brand h1 {
+      margin: 0;
+      color: #142033;
+      font-size: 30px;
+      line-height: 1.08;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+    .login-brand p {
+      margin: 0;
+      color: rgba(20,32,51,.62);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .login-form {
+      display: grid;
+      gap: 16px;
+    }
+    .login-field {
+      display: grid;
+      gap: 8px;
+    }
+    .login-field label {
+      color: #223347;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+    .login-field input {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 14px;
+      border-radius: 15px;
+      border: 1px solid rgba(206,217,233,.96);
+      background: rgba(255,255,255,.94);
+      color: #132033;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.88),
+        0 1px 2px rgba(15,23,42,.04);
+      transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+    .login-field input::placeholder {
+      color: rgba(77,94,119,.45);
+    }
+    .login-field input:focus {
+      outline: none;
+      border-color: rgba(37,99,235,.72);
+      box-shadow:
+        0 0 0 4px rgba(37,99,235,.14),
+        0 10px 24px rgba(37,99,235,.10);
+      background: #fff;
+    }
+    .login-field input.has-error {
+      border-color: rgba(220,53,69,.55);
+      box-shadow: 0 0 0 4px rgba(220,53,69,.10);
+    }
+    .login-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 22px;
+    }
+    .remember-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #44566f;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .remember-check input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+    }
+    .login-alert {
+      display: none;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 11px 13px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .login-alert.visible { display: flex; }
+    .login-alert--error {
+      border: 1px solid rgba(220,53,69,.20);
+      background: rgba(254,242,242,.92);
+      color: #9f1c1c;
+    }
+    .login-alert--warning {
+      border: 1px solid rgba(234,179,8,.20);
+      background: rgba(254,249,195,.92);
+      color: #8a4b06;
+    }
+    .login-btn {
+      width: 100%;
+      min-height: 48px;
+      border: 0;
+      border-radius: 15px;
+      background: linear-gradient(180deg, #2686ff, #0b6dff);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0;
+      cursor: pointer;
+      box-shadow:
+        0 14px 28px rgba(11,109,255,.24),
+        inset 0 1px 0 rgba(255,255,255,.24);
+      transition: transform .12s ease, box-shadow .16s ease, opacity .16s ease;
+    }
+    .login-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow:
+        0 18px 34px rgba(11,109,255,.28),
+        inset 0 1px 0 rgba(255,255,255,.24);
+    }
+    .login-btn:active:not(:disabled) {
+      transform: scale(.985);
+    }
+    .login-btn:disabled {
+      opacity: .66;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .spinner {
+      display: inline-block;
+      width: 15px;
+      height: 15px;
+      margin-right: 6px;
+      border: 2px solid rgba(255,255,255,.34);
+      border-top-color: #fff;
+      border-radius: 50%;
+      vertical-align: -2px;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @media (max-width: 560px) {
+      body { padding: 14px; }
+      .login-shell { padding: 28px 20px 22px; border-radius: 24px; }
+      .login-brand h1 { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-brand">
+      <span class="login-brand-badge">TWODRAPES ERP</span>
+      <h1>统一登录入口</h1>
+    </section>
+
+    <div class="login-alert login-alert--error" id="loginAlert" role="alert" aria-live="assertive">
+      <span>⚠</span>
+      <span id="loginAlertText"></span>
+    </div>
+
+    <form class="login-form" id="loginForm" autocomplete="on" novalidate>
+      <div class="login-field">
+        <label for="username">用户名</label>
+        <input id="username" type="text" name="username" autocomplete="username" placeholder="请输入用户名" required autofocus>
+      </div>
+      <div class="login-field">
+        <label for="password">密码</label>
+        <input id="password" type="password" name="current-password" autocomplete="current-password" placeholder="请输入密码" required>
+      </div>
+
+      <div class="login-row">
+        <label class="remember-check" for="rememberPassword">
+          <input id="rememberPassword" type="checkbox" name="rememberPassword">
+          <span>记住密码</span>
+        </label>
+      </div>
+
+      <button class="login-btn" id="loginBtn" type="submit">登录</button>
+    </form>
+  </main>
+
+  <script>
+    (function () {
+      const APP_PATHS = {
+        management: '/admin',
+        shopify: '/ops/shopify',
+        amazon: '/ops/amazon'
+      };
+      const REMEMBER_USER_KEY = 'twodrapes_login_username';
+      const REMEMBER_PASS_KEY = 'twodrapes_login_password';
+      const REMEMBER_FLAG_KEY = 'twodrapes_login_remember';
+      const context = window.TwodrapesAppContext || {};
+      const loginUrl = context.loginUrl || context.loginPath || '/login';
+
+      const loginForm = document.getElementById('loginForm');
+      const loginBtn = document.getElementById('loginBtn');
+      const loginAlert = document.getElementById('loginAlert');
+      const loginAlertText = document.getElementById('loginAlertText');
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      const rememberInput = document.getElementById('rememberPassword');
+
+      function showAlert(message, type) {
+        loginAlert.className = `login-alert login-alert--${type || 'error'} visible`;
+        loginAlertText.textContent = message;
+      }
+
+      function hideAlert() {
+        loginAlert.className = 'login-alert login-alert--error';
+        loginAlertText.textContent = '';
+      }
+
+      function markFieldError(input, hasError) {
+        input.classList.toggle('has-error', !!hasError);
+      }
+
+      function clearSession() {
+        localStorage.removeItem('twodrapes_token');
+        localStorage.removeItem('twodrapes_user');
+      }
+
+      function writeSession(token, user) {
+        localStorage.setItem('twodrapes_token', token);
+        localStorage.setItem('twodrapes_user', JSON.stringify(user));
+      }
+
+      function setLoading(loading) {
+        loginBtn.disabled = loading;
+        loginBtn.innerHTML = loading ? '<span class="spinner"></span>登录中...' : '登录';
+      }
+
+      function saveRememberedCredentials() {
+        if (rememberInput.checked) {
+          localStorage.setItem(REMEMBER_USER_KEY, usernameInput.value.trim());
+          localStorage.setItem(REMEMBER_PASS_KEY, passwordInput.value);
+          localStorage.setItem(REMEMBER_FLAG_KEY, '1');
+        } else {
+          localStorage.removeItem(REMEMBER_USER_KEY);
+          localStorage.removeItem(REMEMBER_PASS_KEY);
+          localStorage.removeItem(REMEMBER_FLAG_KEY);
+        }
+      }
+
+      function restoreRememberedCredentials() {
+        const remember = localStorage.getItem(REMEMBER_FLAG_KEY) === '1';
+        if (!remember) return;
+        rememberInput.checked = true;
+        usernameInput.value = localStorage.getItem(REMEMBER_USER_KEY) || '';
+        passwordInput.value = localStorage.getItem(REMEMBER_PASS_KEY) || '';
+      }
+
+      function routeForUser(user) {
+        if (!user) return loginUrl;
+        if (user.role === 'admin') return APP_PATHS.management;
+        if (user.channel === 'amazon') return APP_PATHS.amazon;
+        if (user.channel === 'shopify') return APP_PATHS.shopify;
+        return null;
+      }
+
+      async function verifyToken(token) {
+        const headers = { 'Content-Type': 'application/json' };
+        if (context.app) headers['X-Twodrapes-App'] = context.app;
+        if (context.channel) headers['X-Twodrapes-Channel'] = context.channel;
+        const response = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ token })
+        });
+        return response.json().catch(() => ({ ok: false }));
+      }
+
+      async function restoreExistingSession() {
+        const token = localStorage.getItem('twodrapes_token');
+        if (!token) return;
+        try {
+          const result = await verifyToken(token);
+          if (!result.ok || !result.user) {
+            clearSession();
+            return;
+          }
+          const target = routeForUser(result.user);
+          if (target) {
+            window.location.href = target;
+          } else {
+            clearSession();
+            showAlert('当前账号没有可访问的工作台。', 'warning');
+          }
+        } catch {
+          clearSession();
+        }
+      }
+
+      loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        hideAlert();
+        markFieldError(usernameInput, false);
+        markFieldError(passwordInput, false);
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!username) {
+          markFieldError(usernameInput, true);
+          showAlert('请输入用户名。', 'error');
+          usernameInput.focus();
+          return;
+        }
+        if (!password) {
+          markFieldError(passwordInput, true);
+          showAlert('请输入密码。', 'error');
+          passwordInput.focus();
+          return;
+        }
+
+        setLoading(true);
+
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await response.json().catch(() => ({ ok: false, error: '登录失败，请稍后重试' }));
+
+          if (!response.ok || !data.ok || !data.token || !data.user) {
+            if (response.status === 401) {
+              showAlert('账号或密码错误，请检查后重试。', 'error');
+            } else if (response.status === 409) {
+              showAlert(data.error || '当前账号存在多个渠道身份，请联系管理员处理。', 'warning');
+            } else if (response.status >= 500) {
+              showAlert('服务暂时不可用，请稍后重试。', 'error');
+            } else {
+              showAlert(data.error || '登录失败，请稍后重试。', 'error');
+            }
+            setLoading(false);
+            return;
+          }
+
+          writeSession(data.token, data.user);
+          saveRememberedCredentials();
+
+          const target = routeForUser(data.user);
+          if (!target) {
+            clearSession();
+            showAlert('当前账号没有可访问的工作台。', 'warning');
+            setLoading(false);
+            return;
+          }
+
+          window.location.href = target;
+        } catch (error) {
+          clearSession();
+          showAlert('网络连接异常，请稍后重试。', 'error');
+          setLoading(false);
+        }
+      });
+
+      rememberInput.addEventListener('change', () => {
+        if (!rememberInput.checked) {
+          localStorage.removeItem(REMEMBER_USER_KEY);
+          localStorage.removeItem(REMEMBER_PASS_KEY);
+          localStorage.removeItem(REMEMBER_FLAG_KEY);
+        }
+      });
+
+      usernameInput.addEventListener('input', () => {
+        markFieldError(usernameInput, false);
+        hideAlert();
+      });
+
+      passwordInput.addEventListener('input', () => {
+        markFieldError(passwordInput, false);
+        hideAlert();
+      });
+
+      restoreRememberedCredentials();
+      restoreExistingSession().catch(() => { clearSession(); });
+    })();
+  </script>
+</body>
+</html>

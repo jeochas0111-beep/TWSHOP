@@ -1,0 +1,672 @@
+{
+  "name": "twodrapes",
+  "version": "1.0.0",
+  "channelHeader": "X-Twodrapes-App",
+  "resources": [
+    { "name": "health", "uri": "twodrapes://health", "path": "/api/health", "desc": "Server health status" },
+    { "name": "globals", "uri": "twodrapes://globals", "path": "/api/globals", "desc": "All global configuration values" },
+    { "name": "fabrics", "uri": "twodrapes://fabrics", "path": "/api/fabrics", "desc": "All fabric definitions" },
+    { "name": "linings", "uri": "twodrapes://linings", "path": "/api/linings", "desc": "All lining definitions" },
+    { "name": "labor-rules", "uri": "twodrapes://labor-rules", "path": "/api/labor-rules", "desc": "Labor cost rules" },
+    { "name": "memory-rules", "uri": "twodrapes://memory-rules", "path": "/api/memory-rules", "desc": "Memory training cost rules" },
+    { "name": "tax-rates", "uri": "twodrapes://tax-rates", "path": "/api/tax-rates", "desc": "US state tax rates" },
+    { "name": "products", "uri": "twodrapes://products", "path": "/api/products", "desc": "All products for current channel" }
+  ],
+  "groups": [
+    {
+      "name": "system",
+      "tools": [
+        { "name": "health_check", "method": "GET", "path": "/api/health", "desc": "Check if the TWODRAPES server is running" },
+        { "name": "get_bootstrap_config", "method": "GET", "path": "/api/bootstrap", "desc": "Get app bootstrap config (channel info, feature flags, rate settings)" }
+      ]
+    },
+    {
+      "name": "auth",
+      "tools": [
+        { "name": "auth_verify", "method": "POST", "path": "/api/auth/verify", "desc": "Verify current authentication token" },
+        { "name": "auth_get_me", "method": "GET", "path": "/api/auth/me", "desc": "Get current authenticated user profile" },
+        {
+          "name": "auth_update_profile", "method": "PUT", "path": "/api/auth/me",
+          "desc": "[WRITE] Update current user display name and/or username",
+          "params": {
+            "display_name": { "type": "string", "optional": true, "desc": "New display name" },
+            "username": { "type": "string", "optional": true, "desc": "New username" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "globals",
+      "tools": [
+        { "name": "get_globals", "method": "GET", "path": "/api/globals", "desc": "Get all global configuration values" },
+        {
+          "name": "update_globals", "method": "PUT", "path": "/api/globals",
+          "desc": "[WRITE] Update global configuration values",
+          "params": {
+            "values": { "type": "array", "desc": "Array of {key, value, value_type} pairs", "items": { "type": "object" } }
+          }
+        }
+      ]
+    },
+    {
+      "name": "fabrics",
+      "tools": [
+        { "name": "list_fabrics", "method": "GET", "path": "/api/fabrics", "desc": "List all fabric materials" },
+        {
+          "name": "create_fabric", "method": "POST", "path": "/api/fabrics",
+          "desc": "[WRITE] Create a new fabric material",
+          "params": {
+            "name": { "type": "string", "desc": "Fabric display name" },
+            "series": { "type": "string", "optional": true, "desc": "Series grouping" },
+            "width_cm": { "type": "number", "desc": "Roll width in cm" },
+            "price_per_m": { "type": "number", "desc": "Cost per meter in RMB" },
+            "enabled": { "type": "number", "optional": true, "desc": "1=enabled, 0=disabled" }
+          }
+        },
+        {
+          "name": "update_fabric", "method": "PUT", "path": "/api/fabrics/{id}",
+          "desc": "[WRITE] Update a fabric material",
+          "params": {
+            "id": { "type": "string", "desc": "Fabric ID" },
+            "name": { "type": "string", "optional": true },
+            "series": { "type": "string", "optional": true },
+            "width_cm": { "type": "number", "optional": true },
+            "price_per_m": { "type": "number", "optional": true },
+            "enabled": { "type": "number", "optional": true }
+          }
+        },
+        {
+          "name": "delete_fabric", "method": "DELETE", "path": "/api/fabrics/{id}",
+          "desc": "[WRITE] Delete a fabric material",
+          "params": {
+            "id": { "type": "string", "desc": "Fabric ID to delete" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "linings",
+      "tools": [
+        { "name": "list_linings", "method": "GET", "path": "/api/linings", "desc": "List all lining materials" },
+        {
+          "name": "create_lining", "method": "POST", "path": "/api/linings",
+          "desc": "[WRITE] Create a new lining material",
+          "params": {
+            "name": { "type": "string", "desc": "Lining display name" },
+            "color": { "type": "string", "optional": true, "desc": "English color label" },
+            "width_cm": { "type": "number", "desc": "Roll width in cm (0 for no-lining)" },
+            "price_per_m": { "type": "number", "desc": "Cost per meter in RMB" },
+            "enabled": { "type": "number", "optional": true }
+          }
+        },
+        {
+          "name": "update_lining", "method": "PUT", "path": "/api/linings/{id}",
+          "desc": "[WRITE] Update a lining material",
+          "params": {
+            "id": { "type": "string", "desc": "Lining ID" },
+            "name": { "type": "string", "optional": true },
+            "color": { "type": "string", "optional": true },
+            "width_cm": { "type": "number", "optional": true },
+            "price_per_m": { "type": "number", "optional": true },
+            "enabled": { "type": "number", "optional": true }
+          }
+        },
+        {
+          "name": "delete_lining", "method": "DELETE", "path": "/api/linings/{id}",
+          "desc": "[WRITE] Delete a lining material",
+          "params": {
+            "id": { "type": "string", "desc": "Lining ID to delete" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "products",
+      "tools": [
+        { "name": "list_products", "method": "GET", "path": "/api/products", "desc": "List active products for the current channel" },
+        { "name": "list_archived_products", "method": "GET", "path": "/api/products/archived", "desc": "List archived products" },
+        {
+          "name": "get_product", "method": "GET", "path": "/api/products/{id}",
+          "desc": "Get a single product by ID with pricing tiers and options",
+          "params": { "id": { "type": "string", "desc": "Product ID" } }
+        },
+        {
+          "name": "create_product", "method": "POST", "path": "/api/products",
+          "desc": "[WRITE] Create a new product with pricing tiers and options",
+          "params": {
+            "name": { "type": "string", "desc": "Product name" },
+            "factory_name": { "type": "string", "optional": true, "desc": "Name shown to factory" },
+            "type": { "type": "string", "optional": true },
+            "series": { "type": "string", "optional": true },
+            "default_fabric_id": { "type": "string", "optional": true },
+            "base_price": { "type": "number", "optional": true },
+            "default_fullness": { "type": "number", "optional": true },
+            "panels_per_unit": { "type": "number", "optional": true }
+          }
+        },
+        {
+          "name": "update_product", "method": "PUT", "path": "/api/products/{id}",
+          "desc": "[WRITE] Update product details",
+          "params": {
+            "id": { "type": "string", "desc": "Product ID" },
+            "name": { "type": "string", "optional": true },
+            "factory_name": { "type": "string", "optional": true },
+            "type": { "type": "string", "optional": true },
+            "series": { "type": "string", "optional": true },
+            "default_fabric_id": { "type": "string", "optional": true },
+            "base_price": { "type": "number", "optional": true },
+            "enabled": { "type": "number", "optional": true }
+          }
+        },
+        {
+          "name": "delete_product", "method": "DELETE", "path": "/api/products/{id}",
+          "desc": "[WRITE] Delete a product and all associated data",
+          "params": { "id": { "type": "string", "desc": "Product ID to delete" } }
+        },
+        {
+          "name": "copy_product", "method": "POST", "path": "/api/products/{id}/copy",
+          "desc": "[WRITE] Duplicate a product",
+          "params": { "id": { "type": "string", "desc": "Product ID to copy" } }
+        },
+        {
+          "name": "update_product_width_prices", "method": "PUT", "path": "/api/products/{id}/width-prices",
+          "desc": "[WRITE] Replace width-based pricing tiers",
+          "params": {
+            "id": { "type": "string", "desc": "Product ID" },
+            "prices": { "type": "array", "desc": "Width price tiers [{size_in, price_usd, sort_order}]", "items": { "type": "object" } }
+          }
+        },
+        {
+          "name": "update_product_length_prices", "method": "PUT", "path": "/api/products/{id}/length-prices",
+          "desc": "[WRITE] Replace length-based pricing tiers",
+          "params": {
+            "id": { "type": "string", "desc": "Product ID" },
+            "prices": { "type": "array", "desc": "Length price tiers [{size_in, price_usd, sort_order}]", "items": { "type": "object" } }
+          }
+        },
+        {
+          "name": "update_product_options", "method": "PUT", "path": "/api/products/{id}/options",
+          "desc": "[WRITE] Replace all option groups and values",
+          "params": {
+            "id": { "type": "string", "desc": "Product ID" },
+            "options": { "type": "array", "desc": "Option groups with values", "items": { "type": "object" } }
+          }
+        },
+        {
+          "name": "archive_product", "method": "PUT", "path": "/api/products/{id}/archive",
+          "desc": "[WRITE] Archive a product (soft delete)",
+          "params": { "id": { "type": "string", "desc": "Product ID to archive" } }
+        },
+        {
+          "name": "unarchive_product", "method": "PUT", "path": "/api/products/{id}/unarchive",
+          "desc": "[WRITE] Restore an archived product",
+          "params": { "id": { "type": "string", "desc": "Product ID to restore" } }
+        }
+      ]
+    },
+    {
+      "name": "rules",
+      "tools": [
+        { "name": "get_labor_rules", "method": "GET", "path": "/api/labor-rules", "desc": "List all labor cost rules (tiered by height and layer)" },
+        {
+          "name": "update_labor_rules", "method": "PUT", "path": "/api/labor-rules",
+          "desc": "[WRITE] Replace all labor cost rules",
+          "params": {
+            "rules": { "type": "array", "desc": "Complete set of labor rules [{layer, min_m, max_m, rate_rmb_per_m}]", "items": { "type": "object" } }
+          }
+        },
+        { "name": "get_memory_rules", "method": "GET", "path": "/api/memory-rules", "desc": "List all memory/shaping cost rules" },
+        {
+          "name": "update_memory_rules", "method": "PUT", "path": "/api/memory-rules",
+          "desc": "[WRITE] Replace all memory training cost rules",
+          "params": {
+            "rules": { "type": "array", "desc": "Complete set of memory rules", "items": { "type": "object" } }
+          }
+        },
+        { "name": "get_tax_rates", "method": "GET", "path": "/api/tax-rates", "desc": "List all US state sales tax rates" },
+        {
+          "name": "update_tax_rates", "method": "PUT", "path": "/api/tax-rates",
+          "desc": "[WRITE] Replace all tax rates",
+          "params": {
+            "rates": { "type": "array", "desc": "Complete set of tax rates [{code, state, rate}]", "items": { "type": "object" } }
+          }
+        }
+      ]
+    },
+    {
+      "name": "calc",
+      "tools": [
+        {
+          "name": "calc_item_cost", "method": "POST", "path": "/api/calc/item",
+          "desc": "Calculate estimated cost for a single order item",
+          "params": {
+            "product_id": { "type": "string", "desc": "Product ID" },
+            "fabric_id": { "type": "string", "desc": "Fabric ID" },
+            "lining_id": { "type": "string", "optional": true, "desc": "Lining ID" },
+            "width_in": { "type": "number", "desc": "Finished width in inches" },
+            "length_in": { "type": "number", "desc": "Finished length in inches" },
+            "fullness": { "type": "number", "optional": true },
+            "qty": { "type": "number", "optional": true, "desc": "Quantity (default 1)" },
+            "selected_options": { "type": "object", "optional": true, "desc": "Selected option key-value pairs" }
+          }
+        },
+        {
+          "name": "calc_material_plan", "method": "POST", "path": "/api/calc/material-plan",
+          "desc": "Calculate fabric/lining material cutting plan",
+          "params": {
+            "fabric_id": { "type": "string", "desc": "Fabric ID" },
+            "lining_id": { "type": "string", "optional": true },
+            "width_in": { "type": "number", "desc": "Finished width in inches" },
+            "length_in": { "type": "number", "desc": "Finished length in inches" },
+            "fullness": { "type": "number", "optional": true },
+            "qty": { "type": "number", "optional": true },
+            "double_layer": { "type": "boolean", "optional": true }
+          }
+        }
+      ]
+    },
+    {
+      "name": "orders",
+      "tools": [
+        {
+          "name": "list_orders", "method": "GET", "path": "/api/orders",
+          "desc": "List orders (max 200) with items",
+          "params": {
+            "channel": { "type": "string", "optional": true, "desc": "Filter by channel" },
+            "status": { "type": "string", "optional": true, "desc": "Filter by status" },
+            "date_from": { "type": "string", "optional": true, "desc": "Start date (YYYY-MM-DD)" },
+            "date_to": { "type": "string", "optional": true, "desc": "End date (YYYY-MM-DD)" }
+          }
+        },
+        {
+          "name": "get_order", "method": "GET", "path": "/api/orders/{id}",
+          "desc": "Get a single order with all items and details",
+          "params": { "id": { "type": "number", "desc": "Order ID" } }
+        },
+        {
+          "name": "create_order", "method": "POST", "path": "/api/orders",
+          "desc": "[WRITE] Create a new order with items",
+          "params": {
+            "order_no": { "type": "string", "optional": true },
+            "order_date": { "type": "string", "optional": true, "desc": "YYYY-MM-DD" },
+            "delivery_date": { "type": "string", "optional": true },
+            "customer_name": { "type": "string", "optional": true },
+            "customer_email": { "type": "string", "optional": true },
+            "customer_phone": { "type": "string", "optional": true },
+            "customer_address": { "type": "string", "optional": true },
+            "tax_state_code": { "type": "string", "optional": true },
+            "remark": { "type": "string", "optional": true },
+            "items": { "type": "array", "desc": "Order items [{product_id, qty, width_in, length_in, fabric_id, ...}]", "items": { "type": "object" } }
+          }
+        },
+        {
+          "name": "update_order", "method": "PUT", "path": "/api/orders/{id}",
+          "desc": "[WRITE] Update an existing order",
+          "params": {
+            "id": { "type": "number", "desc": "Order ID" },
+            "order_no": { "type": "string", "optional": true },
+            "order_date": { "type": "string", "optional": true },
+            "delivery_date": { "type": "string", "optional": true },
+            "customer_name": { "type": "string", "optional": true },
+            "customer_email": { "type": "string", "optional": true },
+            "customer_phone": { "type": "string", "optional": true },
+            "customer_address": { "type": "string", "optional": true },
+            "tax_state_code": { "type": "string", "optional": true },
+            "remark": { "type": "string", "optional": true },
+            "logistics_provider": { "type": "string", "optional": true },
+            "tracking_number": { "type": "string", "optional": true },
+            "delivery_channel": { "type": "string", "optional": true },
+            "weight_kg": { "type": "number", "optional": true },
+            "logistics_cost_rmb": { "type": "number", "optional": true },
+            "shipping_cost": { "type": "number", "optional": true },
+            "delivered_date": { "type": "string", "optional": true },
+            "shipping_date": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "delete_order", "method": "DELETE", "path": "/api/orders/{id}",
+          "desc": "[WRITE] Delete an order and all its items and feedback",
+          "params": { "id": { "type": "number", "desc": "Order ID to delete" } }
+        },
+        {
+          "name": "set_order_status", "method": "PUT", "path": "/api/orders/{id}/status",
+          "desc": "[WRITE] Update order status",
+          "params": {
+            "id": { "type": "number", "desc": "Order ID" },
+            "status": { "type": "string", "desc": "New status (draft/production/shipping/completed)" }
+          }
+        },
+        {
+          "name": "set_order_reminder", "method": "PUT", "path": "/api/orders/{id}/reminder",
+          "desc": "[WRITE] Set or clear a reminder flag on an order",
+          "params": {
+            "id": { "type": "number", "desc": "Order ID" },
+            "reminder": { "type": "number", "desc": "1 to set, 0 to clear" },
+            "reminder_text": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "recalculate_order", "method": "POST", "path": "/api/orders/{id}/recalculate",
+          "desc": "[WRITE] Recalculate all cost fields for an order",
+          "params": { "id": { "type": "number", "desc": "Order ID" } }
+        },
+        {
+          "name": "recalculate_all_orders", "method": "POST", "path": "/api/orders/recalculate-all",
+          "desc": "[WRITE] Recalculate all orders for the current channel"
+        },
+        {
+          "name": "update_order_logistics", "method": "PUT", "path": "/api/orders/{id}/logistics",
+          "desc": "[WRITE] Update logistics cost and recalculate",
+          "params": {
+            "id": { "type": "number", "desc": "Order ID" },
+            "logistics_cost_rmb": { "type": "number", "desc": "Logistics cost in RMB" },
+            "logistics_provider": { "type": "string", "optional": true },
+            "tracking_number": { "type": "string", "optional": true },
+            "delivery_channel": { "type": "string", "optional": true },
+            "weight_kg": { "type": "number", "optional": true }
+          }
+        },
+        {
+          "name": "update_order_cost_overrides", "method": "PUT", "path": "/api/orders/{id}/cost-overrides",
+          "desc": "[WRITE] Set production cost override and logistics cost, then recalculate",
+          "params": {
+            "id": { "type": "number", "desc": "Order ID" },
+            "production_cost_override_rmb": { "type": "number", "nullable": true, "desc": "Override cost (null to clear)" },
+            "logistics_cost_rmb": { "type": "number", "optional": true }
+          }
+        },
+        {
+          "name": "update_order_financial", "method": "PUT", "path": "/api/orders/{id}/financial",
+          "desc": "[WRITE] Override sales amount and tax in USD. Recalculates.",
+          "params": {
+            "id": { "type": "number", "desc": "Order ID" },
+            "sales_override_usd": { "type": "number", "optional": true, "nullable": true },
+            "tax_override_usd": { "type": "number", "optional": true, "nullable": true }
+          }
+        },
+        {
+          "name": "update_delivery_screenshot", "method": "POST_FILE", "path": "/api/orders/{id}/delivery-screenshot",
+          "desc": "[WRITE] Upload a delivery confirmation screenshot (base64 image)",
+          "params": {
+            "id": { "type": "number", "desc": "Order ID" },
+            "image_base64": { "type": "string", "desc": "Base64-encoded image data" },
+            "filename": { "type": "string", "optional": true, "desc": "Filename (default: screenshot.png)" }
+          }
+        },
+        {
+          "name": "delete_delivery_screenshot", "method": "DELETE", "path": "/api/orders/{id}/delivery-screenshot",
+          "desc": "[WRITE] Delete the delivery confirmation screenshot",
+          "params": { "id": { "type": "number", "desc": "Order ID" } }
+        },
+        {
+          "name": "get_delivery_screenshot", "method": "GET_FILE", "path": "/api/orders/{id}/delivery-screenshot",
+          "desc": "Download delivery confirmation screenshot (base64)",
+          "params": { "id": { "type": "number", "desc": "Order ID" } }
+        }
+      ]
+    },
+    {
+      "name": "order_items",
+      "tools": [
+        {
+          "name": "set_item_discount", "method": "PUT", "path": "/api/order-items/{id}/discount",
+          "desc": "[WRITE] Set discount mode/value and actual paid amount",
+          "params": {
+            "id": { "type": "number", "desc": "Order item ID" },
+            "discount_mode": { "type": "string", "desc": "Discount mode (none/flat/percent)" },
+            "discount_value": { "type": "number", "optional": true },
+            "actual_paid_usd": { "type": "number", "optional": true }
+          }
+        },
+        {
+          "name": "set_item_option", "method": "PUT", "path": "/api/order-items/{id}/option",
+          "desc": "[WRITE] Update a single selected option on an order item",
+          "params": {
+            "id": { "type": "number", "desc": "Order item ID" },
+            "option_key": { "type": "string", "desc": "Option key" },
+            "option_value": { "type": "string", "desc": "Option value label" }
+          }
+        },
+        {
+          "name": "update_item_size", "method": "PUT", "path": "/api/order-items/{id}/size",
+          "desc": "[WRITE] Update width/length dimensions",
+          "params": {
+            "id": { "type": "number", "desc": "Order item ID" },
+            "width_in": { "type": "number", "desc": "Width in inches" },
+            "length_in": { "type": "number", "desc": "Length in inches" }
+          }
+        },
+        {
+          "name": "update_item_qty", "method": "PUT", "path": "/api/order-items/{id}/qty",
+          "desc": "[WRITE] Update quantity",
+          "params": {
+            "id": { "type": "number", "desc": "Order item ID" },
+            "qty": { "type": "number", "desc": "New quantity" }
+          }
+        },
+        {
+          "name": "update_item_production_cost", "method": "PUT", "path": "/api/order-items/{id}/production-cost",
+          "desc": "[WRITE] Set or clear production cost override",
+          "params": {
+            "id": { "type": "number", "desc": "Order item ID" },
+            "production_cost_override_rmb": { "type": "number", "nullable": true, "desc": "Override cost (null to clear)" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "factory",
+      "tools": [
+        { "name": "list_factory_orders", "method": "GET", "path": "/api/factory/orders", "desc": "List factory-formatted order summaries" },
+        { "name": "get_factory_params", "method": "GET", "path": "/api/factory/params", "desc": "Get all factory parameters" },
+        {
+          "name": "update_factory_params", "method": "PUT", "path": "/api/factory/params",
+          "desc": "[WRITE] Batch update all factory parameters",
+          "params": {
+            "globals": { "type": "object", "optional": true },
+            "fabrics": { "type": "array", "optional": true, "items": { "type": "object" } },
+            "linings": { "type": "array", "optional": true, "items": { "type": "object" } },
+            "labor_rules": { "type": "array", "optional": true, "items": { "type": "object" } },
+            "memory_rules": { "type": "array", "optional": true, "items": { "type": "object" } }
+          }
+        },
+        { "name": "list_factory_feedback", "method": "GET", "path": "/api/factory/feedback", "desc": "List all factory feedback rows" },
+        {
+          "name": "delete_factory_feedback", "method": "DELETE", "path": "/api/factory/feedback",
+          "desc": "[WRITE] Delete factory feedback records by IDs",
+          "params": { "ids": { "type": "array", "desc": "Array of feedback IDs to delete", "items": { "type": "number" } } }
+        },
+        {
+          "name": "import_factory_feedback", "method": "POST_FILE", "path": "/api/factory/feedback/import",
+          "desc": "[WRITE] Import factory feedback from XLSX/CSV (base64)",
+          "params": {
+            "file_content": { "type": "string", "desc": "Base64-encoded file content" },
+            "filename": { "type": "string", "optional": true, "desc": "Filename with extension" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "analytics",
+      "tools": [
+        {
+          "name": "get_analytics_overview", "method": "GET", "path": "/api/analytics/overview",
+          "desc": "Comprehensive analytics: summary, monthly trends, expense breakdown, product comparison",
+          "params": {
+            "date_from": { "type": "string", "optional": true, "desc": "Start date (YYYY-MM-DD)" },
+            "date_to": { "type": "string", "optional": true, "desc": "End date (YYYY-MM-DD)" },
+            "channel": { "type": "string", "optional": true },
+            "status": { "type": "string", "optional": true },
+            "product_id": { "type": "string", "optional": true }
+          }
+        }
+      ]
+    },
+    {
+      "name": "import_export",
+      "tools": [
+        {
+          "name": "export_config_csv", "method": "GET_FILE", "path": "/api/export/config-csv",
+          "desc": "Export full system configuration as CSV"
+        },
+        {
+          "name": "export_orders_csv", "method": "GET_FILE", "path": "/api/export/orders-csv",
+          "desc": "Export all orders as CSV"
+        },
+        {
+          "name": "export_summary_csv", "method": "GET_FILE", "path": "/api/export/summary-csv",
+          "desc": "Export order summary CSV",
+          "params": {
+            "channel": { "type": "string", "optional": true },
+            "status": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "export_factory_order_xlsx", "method": "GET_FILE", "path": "/api/export/factory-order/{order_id}",
+          "desc": "Download factory production sheet as XLSX (base64)",
+          "params": { "order_id": { "type": "number", "desc": "Order ID" } }
+        },
+        {
+          "name": "export_cost_record_csv", "method": "GET_FILE", "path": "/api/export/cost-record/{order_id}",
+          "desc": "Download cost record as CSV",
+          "params": { "order_id": { "type": "number", "desc": "Order ID" } }
+        },
+        {
+          "name": "export_product_template_csv", "method": "GET_FILE", "path": "/api/export/product-template-csv",
+          "desc": "Download empty product import template CSV"
+        },
+        {
+          "name": "export_order_import_template_csv", "method": "GET_FILE", "path": "/api/export/order-import-template-csv",
+          "desc": "Download order import template CSV"
+        },
+        {
+          "name": "export_product_config_csv", "method": "GET_FILE", "path": "/api/export/product-csv/{id}",
+          "desc": "Download product configuration as CSV",
+          "params": { "id": { "type": "string", "desc": "Product ID" } }
+        },
+        {
+          "name": "export_factory_orders_batch", "method": "POST_FILE", "path": "/api/export/factory-orders-batch",
+          "desc": "[WRITE] Download batch factory sheets as XLSX (base64)",
+          "params": { "order_ids": { "type": "array", "desc": "Array of order IDs", "items": { "type": "number" } } }
+        },
+        {
+          "name": "export_orders_full_batch", "method": "POST_FILE", "path": "/api/export/orders-full-batch",
+          "desc": "[WRITE] Download full order details as XLSX (base64)",
+          "params": { "order_ids": { "type": "array", "optional": true, "items": { "type": "number" } } }
+        },
+        {
+          "name": "import_config_csv", "method": "POST_FILE", "path": "/api/import/config-csv",
+          "desc": "[WRITE] Import configuration from CSV (base64)",
+          "params": { "file_content": { "type": "string", "desc": "Base64-encoded CSV content" } }
+        },
+        {
+          "name": "import_product_csv", "method": "POST_FILE", "path": "/api/import/product-csv",
+          "desc": "[WRITE] Import product template from CSV (base64)",
+          "params": { "file_content": { "type": "string", "desc": "Base64-encoded CSV content" } }
+        },
+        {
+          "name": "import_orders_csv", "method": "POST_FILE", "path": "/api/import/orders-csv",
+          "desc": "[WRITE] Import orders from CSV (base64)",
+          "params": { "file_content": { "type": "string", "desc": "Base64-encoded CSV content" } }
+        }
+      ]
+    },
+    {
+      "name": "shopify",
+      "tools": [
+        { "name": "get_shopify_status", "method": "GET", "path": "/api/shopify/status", "desc": "Get Shopify integration status" },
+        {
+          "name": "update_shopify_settings", "method": "POST", "path": "/api/shopify/settings",
+          "desc": "[WRITE] Save Shopify settings",
+          "params": {
+            "shop_domain": { "type": "string", "optional": true },
+            "api_version": { "type": "string", "optional": true },
+            "admin_token": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "fetch_shopify_order", "method": "POST", "path": "/api/shopify/orders/fetch",
+          "desc": "Fetch a single Shopify order by name",
+          "params": { "order_name": { "type": "string", "desc": "Shopify order name" } }
+        },
+        {
+          "name": "list_shopify_recent_orders", "method": "GET", "path": "/api/shopify/orders/recent",
+          "desc": "Fetch recent Shopify orders",
+          "params": { "limit": { "type": "number", "optional": true } }
+        }
+      ]
+    },
+    {
+      "name": "samples",
+      "tools": [
+        { "name": "list_samples", "method": "GET", "path": "/api/samples", "desc": "List sample sales records" },
+        {
+          "name": "create_sample", "method": "POST", "path": "/api/samples",
+          "desc": "[WRITE] Create a sample sale record",
+          "params": {
+            "product_id": { "type": "string", "optional": true },
+            "fabric_name": { "type": "string", "desc": "Fabric name" },
+            "quantity": { "type": "number", "optional": true },
+            "amount_usd": { "type": "number", "optional": true },
+            "sale_date": { "type": "string", "optional": true },
+            "remark": { "type": "string", "optional": true }
+          }
+        },
+        {
+          "name": "delete_sample", "method": "DELETE", "path": "/api/samples/{id}",
+          "desc": "[WRITE] Delete a sample sale record",
+          "params": { "id": { "type": "number", "desc": "Sample record ID" } }
+        }
+      ]
+    },
+    {
+      "name": "production_photos",
+      "tools": [
+        {
+          "name": "list_production_photos", "method": "GET", "path": "/api/production-photos/{orderId}",
+          "desc": "List all production photos for an order",
+          "params": { "orderId": { "type": "number", "desc": "Order ID" } }
+        },
+        {
+          "name": "upload_production_photos", "method": "POST_FILE", "path": "/api/production-photos/{orderId}",
+          "desc": "[WRITE] Upload production photos (base64 images)",
+          "params": {
+            "orderId": { "type": "number", "desc": "Order ID" },
+            "images": { "type": "array", "desc": "Images [{data, filename, mime_type}]", "items": { "type": "object" } }
+          }
+        },
+        {
+          "name": "delete_production_photo", "method": "DELETE", "path": "/api/production-photos/{photoId}",
+          "desc": "[WRITE] Delete a production photo",
+          "params": { "photoId": { "type": "number", "desc": "Photo ID" } }
+        },
+        {
+          "name": "get_production_photo_file", "method": "GET_FILE", "path": "/api/production-photos/file/{filename}",
+          "desc": "Download a production photo (base64)",
+          "params": { "filename": { "type": "string", "desc": "Photo filename" } }
+        }
+      ]
+    },
+    {
+      "name": "backups",
+      "tools": [
+        { "name": "list_backups", "method": "GET", "path": "/api/backups", "desc": "List the 50 most recent backups" },
+        {
+          "name": "create_backup", "method": "POST", "path": "/api/backups/manual",
+          "desc": "[WRITE] Create a manual database backup",
+          "params": { "note": { "type": "string", "optional": true } }
+        },
+        { "name": "get_latest_backup_json", "method": "GET", "path": "/api/backups/export-json", "desc": "Export full database as JSON" },
+        {
+          "name": "get_latest_backup_download", "method": "GET_FILE", "path": "/api/backups/latest/download",
+          "desc": "Download the most recent backup file (base64)"
+        },
+        {
+          "name": "import_backup_json", "method": "POST_FILE", "path": "/api/backups/import-json",
+          "desc": "[WRITE] Import database from JSON backup",
+          "params": { "file_content": { "type": "string", "desc": "Base64-encoded JSON content" } }
+        }
+      ]
+    }
+  ]
+}
