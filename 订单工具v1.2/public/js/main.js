@@ -654,14 +654,10 @@ function orderItemModulesHtml(order, isEdit) {
 
   // Production photos section
   const photosSection = `<div class="detail-section production-photos-section">
-    <div class="detail-section-title"><h4>生产照片</h4><span>${items.length} 个订单项</span></div>
-    ${items.map(it => `<div class="production-photos-item" data-order-item-id="${it.id}">
-      <div class="production-photos-header">
-        <span class="production-photos-item-name">${esc(it.product_name || '产品')} — ${esc(it.item_code || '')}</span>
-        <label class="btn small secondary production-photos-upload-btn">上传照片<input type="file" class="production-photos-file-input" data-item-id="${it.id}" accept="image/png,image/jpeg,image/gif,image/webp" multiple style="display:none"></label>
-      </div>
-      <div class="production-photos-grid" data-photos-for="${it.id}"><div class="production-photos-empty">暂无照片</div></div>
-    </div>`).join('')}
+    <div class="detail-section-title"><h4>生产照片</h4>
+      <label class="btn small secondary production-photos-upload-btn">上传照片<input type="file" class="production-photos-file-input" data-order-id="${order.id}" accept="image/png,image/jpeg,image/gif,image/webp" multiple style="display:none"></label>
+    </div>
+    <div class="production-photos-grid" data-photos-for="order-${order.id}"><div class="production-photos-empty">暂无照片</div></div>
   </div>`;
 
   return groupsHtml + costFooter + photosSection;
@@ -690,7 +686,6 @@ function orderFinancialSummaryHtml(order) {
   return `<div class="detail-section detail-section-amounts">
     <div class="detail-section-title">
       <h4>金额汇总</h4>
-      <span>金额右对齐，保留核心财务字段</span>
     </div>
     <div class="amount-summary-grid">
       ${rows.map(([label, value, cls]) => `<div class="amount-summary-row ${cls}">
@@ -797,7 +792,6 @@ function orderLevelDiscountHtml(order) {
       </div>
       <div class="order-actual-paid-row">
         <label>实收金额 USD（退款调整）<input type="number" min="0" step="0.01" value="${salesOverride ? fmt(salesOverride) : ''}" placeholder="留空按折扣计算" data-order-actual-paid></label>
-        <span class="muted-hint">设置后覆盖折扣计算，直接指定订单总售价</span>
       </div>
     </div>
     <div class="discount-breakdown" data-discount-breakdown>
@@ -878,7 +872,7 @@ async function viewOrderModal(orderId, mode) {
         ? field('尾程追踪编码', order.tracking_number, 'text', 'tracking_number')
         : `<div><label>尾程追踪编码${
             order.tracking_number
-              ? `<button type="button" class="tracking-code-link" data-tracking-code="${esc(order.tracking_number)}" data-carrier="${esc(getOrderCarrier(order))}" title="点击复制追踪编码并打开物流官网"><span class="tracking-code-text">${esc(order.tracking_number)}</span><span class="tracking-code-icon" aria-hidden="true">↗</span></button>`
+              ? `<button type="button" class="tracking-code-link" data-tracking-code="${esc(order.tracking_number)}" data-carrier="${esc(getOrderCarrier(order))}" title="点击复制追踪编码并打开物流官网"><span class="tracking-code-text">${esc(order.tracking_number)}</span></button>`
               : `<span class="detail-value">${esc(order.tracking_number || '')}</span>`
           }</label></div>`) +
       field('送达日期', order.delivered_date, 'date', 'delivered_date') +
@@ -919,10 +913,8 @@ async function viewOrderModal(orderId, mode) {
 
     $('editOrderModal').classList.remove('hidden');
 
-    // Load production photos for each item
-    for (const it of (order.items || [])) {
-      loadProductionPhotos(it.id);
-    }
+    // Load production photos for the order
+    loadProductionPhotos(order.id);
 
     // Setup real-time profit preview in edit mode
     if (isEdit) {
@@ -2825,6 +2817,7 @@ function openCalculator(tool) {
   }
   if (tool === 'splice') loadSpliceOrderList();
   if (tool === 'profit') loadProfitOrderList();
+  if (tool === 'production') loadProductionBoard();
   $('toolsDropdownMenu')?.classList.add('hidden');
   document.querySelector('.tools-dropdown-btn')?.setAttribute('aria-expanded', 'false');
 }
@@ -2944,15 +2937,88 @@ function analyticsParams(channel) {
   return params.toString();
 }
 
-function analyticsMetric(label, value, hint = '', borderClass = '', trend = null) {
-  const trendHtml = trend != null
-    ? `<span class="metric-trend ${trend > 0 ? 'up' : trend < 0 ? 'down' : 'flat'}">${trend > 0 ? '↑' : trend < 0 ? '↓' : '→'} ${Math.abs(trend).toFixed(1)}%</span>`
+function getAccentColor(borderClass) {
+  const map = {
+    'border-blue': 'var(--metric-blue)',
+    'border-green': 'var(--metric-green)',
+    'border-amber': 'var(--metric-amber)',
+    'border-red': 'var(--metric-red)',
+    'border-teal': 'var(--metric-teal)',
+  };
+  return map[borderClass] || 'var(--metric-blue)';
+}
+
+function buildMiniAreaSparkline(values, color) {
+  if (!values || values.length < 2) return '';
+  const w = 80, h = 40;
+  const max = Math.max(1, ...values.map(Math.abs));
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const pad = 2;
+  const pts = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * (w - pad * 2);
+    const y = pad + (1 - (v - min) / range) * (h - pad * 2);
+    return `${x},${y}`;
+  });
+  const line = pts.join(' ');
+  const area = `${pad},${h} ${line} ${w - pad},${h}`;
+  const gradId = 'mg-' + color.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="mini-area-chart">
+    <defs>
+      <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity=".18"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity=".02"/>
+      </linearGradient>
+    </defs>
+    <polygon points="${area}" fill="url(#${gradId})"/>
+    <polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function computeTrends(monthlyTrend) {
+  const empty = { orders: null, income: null, production: null, logistics: null, profit: null, profitRate: null, avgOrderValue: null };
+  if (!monthlyTrend || monthlyTrend.length < 2) return empty;
+  const sorted = [...monthlyTrend].sort((a, b) => a.month < b.month ? -1 : 1);
+  const curr = sorted[sorted.length - 1];
+  const prev = sorted[sorted.length - 2];
+  function pctChange(c, p) {
+    if (!p) return null;
+    return ((c - p) / Math.abs(p)) * 100;
+  }
+  return {
+    orders: pctChange(curr.orderCount, prev.orderCount),
+    income: pctChange(curr.incomeRmb, prev.incomeRmb),
+    production: pctChange(curr.productionCostRmb, prev.productionCostRmb),
+    logistics: pctChange(curr.logisticsCostRmb, prev.logisticsCostRmb),
+    profit: pctChange(curr.profitRmb, prev.profitRmb),
+    profitRate: curr.profitRate != null && prev.profitRate != null ? ((curr.profitRate - prev.profitRate) * 100) : null,
+    avgOrderValue: curr.averageOrderValueRmb != null && prev.averageOrderValueRmb != null
+      ? pctChange(curr.averageOrderValueRmb, prev.averageOrderValueRmb) : null
+  };
+}
+
+function computeSparkData(monthlyTrend) {
+  const empty = {};
+  if (!monthlyTrend || !monthlyTrend.length) return empty;
+  const sorted = [...monthlyTrend].sort((a, b) => a.month < b.month ? -1 : 1);
+  return {
+    orders: sorted.map(r => r.orderCount || 0),
+    income: sorted.map(r => r.incomeRmb || 0),
+    production: sorted.map(r => r.productionCostRmb || 0),
+    logistics: sorted.map(r => r.logisticsCostRmb || 0),
+    profit: sorted.map(r => r.profitRmb || 0),
+  };
+}
+
+function analyticsMetric(label, value, hint = '', borderClass = '', trend = null, sparkData = null) {
+  const sparkHtml = sparkData && sparkData.length > 1
+    ? `<span class="metric-sparkline">${buildMiniAreaSparkline(sparkData, getAccentColor(borderClass))}</span>`
     : '';
   return `<div class="analytics-metric-card ${borderClass}">
     <span>${esc(label)}</span>
     <b class="animate-count-up">${esc(value)}</b>
     ${hint ? `<small>${esc(hint)}</small>` : ''}
-    ${trendHtml}
+    ${sparkHtml}
   </div>`;
 }
 
@@ -3084,19 +3150,20 @@ async function loadAnalytics() {
   }
 }
 
-function renderChannelSummary(channel, summary = {}) {
+function renderChannelSummary(channel, summary = {}, monthlyTrend = []) {
   const el = $(channel === 'shopify' ? 'shopifyAnalyticsSummary' : 'amazonAnalyticsSummary');
   if (!el) return;
+  const trend = computeTrends(monthlyTrend);
+  const spark = computeSparkData(monthlyTrend);
   const profitRate = num(summary.profitRate);
   const profitClass = profitRate > 20 ? 'border-green' : profitRate > 10 ? 'border-amber' : profitRate > 0 ? '' : 'border-red';
   const cards = [
-    analyticsMetric('订单数', String(summary.orderCount || 0), '', 'border-blue'),
-    analyticsMetric('收入 RMB', rmb(summary.incomeRmb), '', 'border-blue'),
-    analyticsMetric('生产成本', rmb(summary.productionCostRmb), '', 'border-amber'),
-    analyticsMetric('物流成本', rmb(summary.logisticsCostRmb), '', 'border-amber'),
-    analyticsMetric('利润', rmb(summary.profitRmb), '', profitClass),
-    analyticsMetric('利润率', pct(summary.profitRate), '', profitClass),
-    analyticsMetric('客单价', rmb(summary.averageOrderValueRmb), '', 'border-teal')
+    analyticsMetric('订单数', String(summary.orderCount || 0), '', 'border-blue', trend.orders, spark.orders),
+    analyticsMetric('收入 RMB', rmb(summary.incomeRmb), '', 'border-blue', trend.income, spark.income),
+    analyticsMetric('生产成本', rmb(summary.productionCostRmb), '', 'border-amber', trend.production, spark.production),
+    analyticsMetric('利润', rmb(summary.profitRmb), '', profitClass, trend.profit, spark.profit),
+    analyticsMetric('利润率', pct(summary.profitRate), '', profitClass, trend.profitRate),
+    analyticsMetric('客单价', rmb(summary.averageOrderValueRmb), '', 'border-teal', trend.avgOrderValue)
   ];
   if (channel === 'shopify') {
     cards.splice(4, 0, analyticsMetric('PayPal 手续费', rmb(summary.paypalFeeRmb), '', 'border-red'));
@@ -3123,20 +3190,26 @@ function renderChannelTrendChart(channel, rows = []) {
     const incomeH = Math.max(2, Math.round(num(row.incomeRmb) / max * 100));
     const costH = Math.max(2, Math.round(num(row.totalCostRmb) / max * 100));
     const profitH = Math.max(2, Math.round(Math.abs(num(row.profitRmb)) / max * 100));
-    const bars = `<span class="trend-bar income" style="height:${incomeH}%"></span>
-      <span class="trend-bar cost" style="height:${costH}%"></span>
-      <span class="trend-bar profit" style="height:${profitH}%"></span>`;
-    const tip = `${esc(row.month)} 收入 ${rmb(row.incomeRmb)} / 支出 ${rmb(row.totalCostRmb)} / 利润 ${rmb(row.profitRmb)}`;
-    return `<div class="trend-month"><div class="trend-bars" title="${tip}">${bars}</div><b>${esc(row.month)}</b></div>`;
+    const bars = `<span class="trend-bar income" style="height:${incomeH}%" data-tooltip="收入: ${rmb(row.incomeRmb)}"></span>
+      <span class="trend-bar cost" style="height:${costH}%" data-tooltip="支出: ${rmb(row.totalCostRmb)}"></span>
+      <span class="trend-bar profit" style="height:${profitH}%" data-tooltip="利润: ${rmb(row.profitRmb)}"></span>`;
+    return `<div class="trend-month"><div class="trend-bars">${bars}</div><b>${esc(row.month)}</b></div>`;
   }).join('');
 }
 
 function renderChannelExpenseChart(channel, expenseBreakdown = []) {
   const el = $(channel === 'shopify' ? 'shopifyExpenseChart' : 'amazonExpenseChart');
   if (!el) return;
+  const expenseGradients = {
+    production: 'linear-gradient(90deg, #059669, #34D399)',
+    logistics: 'linear-gradient(90deg, #2563EB, #60A5FA)',
+    paypal: 'linear-gradient(90deg, #D97706, #FBBF24)',
+    tax: 'linear-gradient(90deg, #DC2626, #F87171)',
+    commission: 'linear-gradient(90deg, #DC2626, #F87171)',
+  };
   let rows;
   if (channel === 'shopify') {
-    rows = expenseBreakdown.filter(r => r.key !== 'amazon_commission');
+    rows = expenseBreakdown.filter(r => r.key !== 'amazon_commission' && r.key !== 'tax');
   } else {
     const income = state.analytics.amazon?.summary?.incomeRmb || 0;
     rows = [
@@ -3154,9 +3227,10 @@ function renderChannelExpenseChart(channel, expenseBreakdown = []) {
   el.className = 'analytics-expense-chart';
   el.innerHTML = rows.map(row => {
     const percent = total > 0 ? num(row.amountRmb) / total : 0;
+    const gradient = expenseGradients[row.key] || 'none';
     return `<div class="expense-row">
       <div class="expense-row-head"><span>${esc(row.label)}</span><b>${rmb(row.amountRmb)}</b></div>
-      <div class="expense-track"><span style="width:${Math.round(percent * 100)}%"></span></div>
+      <div class="expense-track"><span style="width:${Math.round(percent * 100)}%;background:${gradient}"></span></div>
       <small>${pct(percent)}</small>
     </div>`;
   }).join('');
@@ -3192,7 +3266,7 @@ function renderChannelProductTable(channel) {
 
 function renderChannelAnalytics(channel) {
   const data = state.analytics[channel] || {};
-  renderChannelSummary(channel, data.summary || {});
+  renderChannelSummary(channel, data.summary || {}, data.monthlyTrend || []);
   renderChannelTrendChart(channel, data.monthlyTrend || []);
   renderChannelExpenseChart(channel, data.expenseBreakdown || []);
   renderChannelProductTable(channel);
@@ -3204,11 +3278,12 @@ function renderLogisticsAnalysis(channel, la) {
   if (!el) return;
   const byCarrier = la.byCarrier || [];
   if (!byCarrier.length) { el.innerHTML = '<div class="empty">暂无物流分析数据</div>'; return; }
+  const avgDays = la.avgDeliveryDays || 0;
   const summaryCards = [
     `<div class="logistics-kpi"><span>物流总成本</span><b>${rmb(la.totalCostRmb || 0)}</b></div>`,
     `<div class="logistics-kpi"><span>平均物流成本</span><b>${rmb(la.avgCostRmb || 0)}</b></div>`,
-    `<div class="logistics-kpi"><span>平均重量</span><b>${fmt(la.avgWeightKg || 0, 2)} kg</b></div>`,
-    `<div class="logistics-kpi"><span>有物流订单数</span><b>${la.orderCount || 0}</b></div>`
+    `<div class="logistics-kpi"><span>平均时效</span><b>${fmt(avgDays, 1)} 天</b></div>`,
+    `<div class="logistics-kpi"><span>平均重量</span><b>${fmt(la.avgWeightKg || 0, 2)} kg</b></div>`
   ];
   const rows = byCarrier.map(c => `<tr>
     <td>${esc(c.carrier)}</td>
@@ -3217,10 +3292,11 @@ function renderLogisticsAnalysis(channel, la) {
     <td>${fmt(c.avgWeightKg, 2)} kg</td>
     <td>${rmb(c.totalCostRmb)}</td>
     <td>${rmb(c.avgCostRmb)}</td>
+    <td>${fmt(c.avgDeliveryDays || 0, 1)} 天</td>
   </tr>`).join('');
   el.innerHTML = `<div class="logistics-kpi-grid">${summaryCards.join('')}</div>
     <div class="table-wrap analytics-table-wrap"><table>
-      <thead><tr><th>物流渠道</th><th>订单数</th><th>总重量</th><th>平均重量</th><th>总物流成本</th><th>平均物流成本</th></tr></thead>
+      <thead><tr><th>物流渠道</th><th>订单数</th><th>总重量</th><th>平均重量</th><th>总物流成本</th><th>平均物流成本</th><th>平均时效</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
 }
@@ -3235,6 +3311,122 @@ function resetAnalyticsFilters() {
   loadAnalytics();
   renderAnalyticsFilterChips();
 }
+
+// ===== Production Board =====
+const PROD_COLOR_MAP = {
+  'snow white': '雪白', 'natural': '本色', 'ivory': '象牙白',
+  'light grey': '浅灰', 'dark grey': '深灰', 'black': '黑色',
+  'beige': '米色', 'white': '白色', 'cream': '奶油色',
+  'grey': '灰色', 'tan': '棕褐', 'navy': '藏蓝',
+};
+const PROD_HEADER_MAP = {
+  'pinch pleat': '韩褶', '2x pinch pleat': '双层韩褶',
+  'pinch pleat + curtain ring': '韩褶+打环',
+  'pinch pleat (black rings)': '韩褶（黑环）',
+  'pinch pleat (silver rings)': '韩褶（银环）',
+  '2x pinch pleat (black rings)': '双层韩褶（黑环）',
+  '2x pinch pleat (silver rings)': '双层韩褶（银环）',
+  'back tab': '暗袢', 'rod pocket': '穿杆', 'grommet': '打孔',
+  'header tape': '顶部工艺带', 'eyelet': '鸡眼',
+};
+const PROD_MEMORY_MAP = { 'without memory training': '否', 'add memory training': '是' };
+const PROD_TIEBACK_MAP = { 'no need': '否', 'yes need the matching tieback': '是', 'yes': '是', 'no': '否' };
+const PROD_LINING_MAP = { 'unlined': '无衬里', 'lined': '有衬里' };
+
+function prodTranslate(key, value) {
+  const k = String(key).toLowerCase();
+  if (k.includes('color')) return PROD_COLOR_MAP[String(value).trim().toLowerCase()] || value;
+  if (k.includes('header')) return PROD_HEADER_MAP[String(value).trim().toLowerCase()] || value;
+  if (k.includes('memory')) return PROD_MEMORY_MAP[String(value).trim().toLowerCase()] || value;
+  if (k.includes('tieback')) return PROD_TIEBACK_MAP[String(value).trim().toLowerCase()] || value;
+  if (k.includes('lining')) return PROD_LINING_MAP[String(value).trim().toLowerCase()] || value;
+  return value;
+}
+
+let productionOrders = [];
+
+async function loadProductionBoard() {
+  const grid = $('productionBoardGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div class="empty">加载中...</div>';
+  try {
+    const data = await api.json('/api/orders');
+    productionOrders = (Array.isArray(data) ? data : data.orders || []).filter(o => o.status === 'production');
+    renderProductionBoard();
+  } catch (e) {
+    grid.innerHTML = `<div class="empty">加载失败: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderProductionBoard() {
+  const grid = $('productionBoardGrid');
+  if (!grid) return;
+  const search = ($('productionSearchInput')?.value || '').toLowerCase();
+  const status = $('productionStatusFilter')?.value || 'production';
+
+  let filtered = productionOrders;
+  if (status !== 'all') filtered = filtered.filter(o => o.status === status);
+  if (search) filtered = filtered.filter(o => (o.order_no || '').toLowerCase().includes(search) || (o.customer_name || '').toLowerCase().includes(search));
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty">暂无生产订单</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(order => {
+    const items = order.items || [];
+    return `<div class="production-board-card" data-order-id="${order.id}">
+      <div class="production-board-header">
+        <span class="production-board-no">${esc(order.order_no || '#' + order.id)}</span>
+        <span class="production-board-date">${esc(order.delivery_date || '')}</span>
+      </div>
+      <div class="production-board-customer">${esc(order.customer_name || '')}</div>
+      <div class="production-board-items">
+        ${items.map(it => {
+          const opts = it.selected_options_json ? JSON.parse(it.selected_options_json) : {};
+          const specs = Object.entries(opts).map(([k, v]) => `${esc(k)}: ${esc(prodTranslate(k, v))}`).join(' / ');
+          return `<div class="production-board-item">
+            <div class="production-board-item-name">${esc(it.product_name || '')}</div>
+            <div class="production-board-item-specs">${specs || `${esc(it.width_in || '')} × ${esc(it.length_in || '')} inch`}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="production-board-footer">
+        <span class="production-board-photo-count">📷 ${order.photo_count || 0}</span>
+        <button class="btn small secondary" onclick="event.stopPropagation();openProductionPhotoUpload(${order.id})">上传照片</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.production-board-card').forEach(card => {
+    card.addEventListener('click', () => viewOrderModal(Number(card.dataset.orderId)));
+  });
+}
+
+function openProductionPhotoUpload(orderId) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.multiple = true;
+  input.onchange = async () => {
+    if (!input.files.length) return;
+    const fd = new FormData();
+    for (const file of input.files) fd.append('photos', file);
+    try {
+      toast('正在上传照片...');
+      await api.json(`/api/production-photos/${orderId}`, { method: 'POST', body: fd });
+      toast('照片已上传');
+      loadProductionBoard();
+    } catch (e) { toast('上传失败: ' + e.message, 'bad'); }
+  };
+  input.click();
+}
+
+// Bind production board filters
+document.addEventListener('DOMContentLoaded', () => {
+  $('productionSearchInput')?.addEventListener('input', renderProductionBoard);
+  $('productionStatusFilter')?.addEventListener('change', renderProductionBoard);
+});
 
 function loadTaxRates() {
   const tbody = $('taxRatesBody');
@@ -3325,15 +3517,15 @@ function renderNotifyPanel() {
 }
 
 // ===== Production Photos =====
-async function loadProductionPhotos(orderItemId) {
+async function loadProductionPhotos(orderId) {
   try {
-    const photos = await api.json(`/api/production-photos/${orderItemId}`);
-    renderProductionPhotos(orderItemId, photos);
+    const photos = await api.json(`/api/production-photos/order/${orderId}`);
+    renderProductionPhotos(orderId, photos);
   } catch {}
 }
 
-function renderProductionPhotos(orderItemId, photos) {
-  const grid = document.querySelector(`[data-photos-for="${orderItemId}"]`);
+function renderProductionPhotos(orderId, photos) {
+  const grid = document.querySelector(`[data-photos-for="order-${orderId}"]`);
   if (!grid) return;
   if (!photos.length) { grid.innerHTML = '<div class="production-photos-empty">暂无照片</div>'; return; }
   grid.innerHTML = photos.map(p => `<div class="production-photo-thumb" data-photo-id="${p.id}">
@@ -3346,20 +3538,20 @@ function renderProductionPhotos(orderItemId, photos) {
       if (!confirm('确认删除此照片？')) return;
       try {
         await api.json(`/api/production-photos/${btn.dataset.deletePhoto}`, { method: 'DELETE' });
-        loadProductionPhotos(orderItemId);
+        loadProductionPhotos(orderId);
       } catch (err) { toast(err.message, 'bad'); }
     };
   });
 }
 
-async function uploadProductionPhotos(orderItemId, files) {
+async function uploadProductionPhotos(orderId, files) {
   const fd = new FormData();
   for (const file of files) fd.append('photos', file);
   try {
     toast('正在上传照片...');
-    await api.json(`/api/production-photos/${orderItemId}`, { method: 'POST', body: fd });
+    await api.json(`/api/production-photos/order/${orderId}`, { method: 'POST', body: fd });
     toast('照片已上传');
-    loadProductionPhotos(orderItemId);
+    loadProductionPhotos(orderId);
   } catch (e) { toast('上传失败: ' + e.message, 'bad'); }
 }
 
@@ -3550,6 +3742,7 @@ function bind() {
     }
     const clearBtn = e.target.closest('[data-clear-reminder]');
     if (clearBtn) {
+      e.stopPropagation();
       const orderId = clearBtn.dataset.clearReminder;
       try {
         await api.json(`/api/orders/${orderId}/reminder`, { method: 'PUT', body: JSON.stringify({ reminder: 0, reminder_text: null }) });
@@ -3815,9 +4008,9 @@ function bind() {
   document.addEventListener('change', (e) => {
     const fileInput = e.target.closest('.production-photos-file-input');
     if (!fileInput) return;
-    const itemId = fileInput.dataset.itemId;
-    if (!itemId || !fileInput.files.length) return;
-    uploadProductionPhotos(Number(itemId), fileInput.files);
+    const orderId = fileInput.dataset.orderId;
+    if (!orderId || !fileInput.files.length) return;
+    uploadProductionPhotos(Number(orderId), fileInput.files);
     fileInput.value = '';
   });
 
@@ -3830,8 +4023,47 @@ function bind() {
     document.querySelectorAll('.modal:not(.hidden)').forEach(m => m.classList.add('hidden'));
   });
 }
+function initChartTooltips() {
+  document.addEventListener('mouseover', (e) => {
+    const tip = e.target.closest('[data-tooltip]');
+    if (!tip) return;
+    let tooltip = document.querySelector('.chart-tooltip');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.className = 'chart-tooltip';
+      document.body.appendChild(tooltip);
+    }
+    tooltip.textContent = tip.dataset.tooltip;
+    tooltip.style.opacity = '1';
+    const rect = tip.getBoundingClientRect();
+    tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+    tooltip.style.top = (rect.top - tooltip.offsetHeight - 8 + window.scrollY) + 'px';
+  });
+  document.addEventListener('mouseout', (e) => {
+    if (!e.target.closest('[data-tooltip]')) return;
+    const tooltip = document.querySelector('.chart-tooltip');
+    if (tooltip) tooltip.style.opacity = '0';
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   applyChannelChrome();
+  initChartTooltips();
+  // Theme toggle
+  function updateThemeButtons(theme) {
+    document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.themeValue === theme);
+    });
+  }
+  const themeLightBtn = document.getElementById('themeLightBtn');
+  const themeDarkBtn = document.getElementById('themeDarkBtn');
+  if (themeLightBtn) {
+    themeLightBtn.addEventListener('click', () => { window.TwodrapesTheme?.set('light'); updateThemeButtons('light'); });
+  }
+  if (themeDarkBtn) {
+    themeDarkBtn.addEventListener('click', () => { window.TwodrapesTheme?.set('dark'); updateThemeButtons('dark'); });
+  }
+  updateThemeButtons(window.TwodrapesTheme?.get() || 'light');
   const authReady = await window.TwodrapesAuthUI?.init({
     toast,
     verifyChannel: ORDER_CHANNEL,

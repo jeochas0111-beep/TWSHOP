@@ -2,6 +2,7 @@ const DEFAULTS = {
   port: 8080,
   factoryPort: 8081,
   amazonPort: 8082,
+  productionPort: 8083,
   host: '0.0.0.0',
   adminUser: 'admin',
   adminPassword: 'admin',
@@ -19,6 +20,7 @@ function serverConfig() {
     port: numberEnv('PORT', DEFAULTS.port),
     factoryPort: numberEnv('FACTORY_PORT', DEFAULTS.factoryPort),
     amazonPort: numberEnv('AMAZON_PORT', DEFAULTS.amazonPort),
+    productionPort: numberEnv('PRODUCTION_PORT', DEFAULTS.productionPort),
     host: process.env.HOST || DEFAULTS.host
   };
 }

@@ -1,2 +1,0 @@
-﻿channel,order_no,order_date,delivery_date,customer_name,customer_email,customer_phone,customer_address,tax_state_code,tax_rate,remark,product_id,product_name,qty,width_in,length_in,fabric_id,lining_id,fullness,selected_options,actual_paid_usd,room_label,item_remark
-shopify,TW-TEST-001,2026-05-26,2026-05-30,Alice,alice@example.com,123456,Shanghai,CA,8.25,手动导入示例,,Lucie DMDD,1,52,84,,lining_none,2,color:Snow White|memory_shaped:Without memory training,0,Living Room,

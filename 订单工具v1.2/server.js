@@ -33,7 +33,7 @@ const { authRoutes, managementAuthRoutes, unifiedAuthRoutes, userRoutes, CHANNEL
 const { jwtAuth } = require('./src/utils/auth');
 
 const serverCfg = appConfig.serverConfig();
-const { port: PORT, factoryPort: FACTORY_PORT, amazonPort: AMAZON_PORT } = serverCfg;
+const { port: PORT, factoryPort: FACTORY_PORT, amazonPort: AMAZON_PORT, productionPort: PRODUCTION_PORT } = serverCfg;
 const HOST = serverCfg.host;
 
 function shouldStartAuxiliaryServers() {
@@ -129,6 +129,7 @@ function errorHandler(err, req, res, next) {
 const app = express();
 const factoryApp = express();
 const amazonApp = express();
+const productionApp = express();
 
 // 初始化数据库
 for (const dir of [dataDir, backupDir, exportDir, path.join(dataDir, 'production-photos')]) fs.mkdirSync(dir, { recursive: true });
@@ -177,6 +178,16 @@ amazonApp.use((req, res, next) => {
   next();
 });
 amazonApp.use(express.static(publicDir, { maxAge: '1h', etag: true }));
+
+// 生产端中间件
+const productionDir = path.join(__dirname, 'public-production');
+productionApp.use(cors);
+productionApp.use(requestLog);
+productionApp.use(compression());
+productionApp.use(express.json({ limit: '20mb' }));
+productionApp.use(express.urlencoded({ extended: true }));
+productionApp.use((req, res, next) => { req.channel = 'production'; next(); });
+productionApp.use(express.static(productionDir, { maxAge: '1h', etag: true }));
 
 app.get(['/', '/login', '/login.html'], (req, res) => {
   sendHtmlPage(res, path.join(publicDir, 'login.html'), {
@@ -279,10 +290,20 @@ amazonApp.get('/api/bootstrap', (req, res) => {
   res.json({ ...context(req.channel), features: appConfig, rates: appConfig.rateConfig() });
 });
 
+// ========== 生产端路由 ==========
+productionApp.use('/api/auth', managementAuthRoutes);
+productionApp.use('/api', jwtAuth('management'));
+productionApp.use('/api', ordersRoutes);
+productionApp.use('/api', productionPhotosRoutes);
+productionApp.get('/api/bootstrap', (req, res) => {
+  res.json({ ...context('management'), features: appConfig, rates: appConfig.rateConfig() });
+});
+
 // 错误处理
 app.use(errorHandler);
 factoryApp.use(errorHandler);
 amazonApp.use(errorHandler);
+productionApp.use(errorHandler);
 
 // 启动服务器
 if (process.env.NO_AUTO_LISTEN !== '1') {
@@ -306,7 +327,12 @@ if (process.env.NO_AUTO_LISTEN !== '1') {
       console.log(`TWODRAPES 亚马逊端已启动: http://${HOST}:${AMAZON_PORT}`);
       console.log(`亚马逊端本地访问 http://localhost:${AMAZON_PORT}`);
     });
+
+    productionApp.listen(PRODUCTION_PORT, HOST, () => {
+      console.log(`TWODRAPES 生产端已启动: http://${HOST}:${PRODUCTION_PORT}`);
+      console.log(`生产端本地访问 http://localhost:${PRODUCTION_PORT}`);
+    });
   }
 }
 
-module.exports = { app, factoryApp, amazonApp, shouldStartAuxiliaryServers };
+module.exports = { app, factoryApp, amazonApp, productionApp, shouldStartAuxiliaryServers };

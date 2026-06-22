@@ -345,32 +345,111 @@ async function loadAnalytics() {
   }
 }
 
-function analyticsMetric(label, value, hint = "") {
-  return `<div class="analytics-metric-card">
+function getAccentColor(borderClass) {
+  const map = {
+    'border-blue': 'var(--metric-blue)',
+    'border-green': 'var(--metric-green)',
+    'border-amber': 'var(--metric-amber)',
+    'border-red': 'var(--metric-red)',
+    'border-teal': 'var(--metric-teal)',
+  };
+  return map[borderClass] || 'var(--metric-blue)';
+}
+
+function buildMiniAreaSparkline(values, color) {
+  if (!values || values.length < 2) return '';
+  const w = 80, h = 40;
+  const max = Math.max(1, ...values.map(Math.abs));
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const pad = 2;
+  const pts = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * (w - pad * 2);
+    const y = pad + (1 - (v - min) / range) * (h - pad * 2);
+    return `${x},${y}`;
+  });
+  const line = pts.join(' ');
+  const area = `${pad},${h} ${line} ${w - pad},${h}`;
+  const gradId = 'mg-' + color.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="mini-area-chart">
+    <defs>
+      <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity=".18"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity=".02"/>
+      </linearGradient>
+    </defs>
+    <polygon points="${area}" fill="url(#${gradId})"/>
+    <polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function computeTrends(monthlyTrend) {
+  const empty = { orders: null, income: null, production: null, logistics: null, profit: null, profitRate: null, avgOrderValue: null };
+  if (!monthlyTrend || monthlyTrend.length < 2) return empty;
+  const sorted = [...monthlyTrend].sort((a, b) => a.month < b.month ? -1 : 1);
+  const curr = sorted[sorted.length - 1];
+  const prev = sorted[sorted.length - 2];
+  function pctChange(c, p) {
+    if (!p) return null;
+    return ((c - p) / Math.abs(p)) * 100;
+  }
+  return {
+    orders: pctChange(curr.orderCount, prev.orderCount),
+    income: pctChange(curr.incomeRmb, prev.incomeRmb),
+    production: pctChange(curr.productionCostRmb, prev.productionCostRmb),
+    logistics: pctChange(curr.logisticsCostRmb, prev.logisticsCostRmb),
+    profit: pctChange(curr.profitRmb, prev.profitRmb),
+    profitRate: curr.profitRate != null && prev.profitRate != null ? ((curr.profitRate - prev.profitRate) * 100) : null,
+    avgOrderValue: curr.averageOrderValueRmb != null && prev.averageOrderValueRmb != null
+      ? pctChange(curr.averageOrderValueRmb, prev.averageOrderValueRmb) : null
+  };
+}
+
+function computeSparkData(monthlyTrend) {
+  const empty = {};
+  if (!monthlyTrend || !monthlyTrend.length) return empty;
+  const sorted = [...monthlyTrend].sort((a, b) => a.month < b.month ? -1 : 1);
+  return {
+    orders: sorted.map(r => r.orderCount || 0),
+    income: sorted.map(r => r.incomeRmb || 0),
+    production: sorted.map(r => r.productionCostRmb || 0),
+    logistics: sorted.map(r => r.logisticsCostRmb || 0),
+    profit: sorted.map(r => r.profitRmb || 0),
+  };
+}
+
+function analyticsMetric(label, value, hint = '', borderClass = '', trend = null, sparkData = null) {
+  const sparkHtml = sparkData && sparkData.length > 1
+    ? `<span class="metric-sparkline">${buildMiniAreaSparkline(sparkData, getAccentColor(borderClass))}</span>`
+    : '';
+  return `<div class="analytics-metric-card ${borderClass}">
     <span>${esc(label)}</span>
     <b>${esc(value)}</b>
-    ${hint ? `<small>${esc(hint)}</small>` : ""}
+    ${hint ? `<small>${esc(hint)}</small>` : ''}
+    ${sparkHtml}
   </div>`;
 }
 
-function renderChannelSummary(channel, summary = {}) {
+function renderChannelSummary(channel, summary = {}, monthlyTrend = []) {
   const el = $(channel === "shopify" ? "shopifyAnalyticsSummary" : "amazonAnalyticsSummary");
   if (!el) return;
+  const trend = computeTrends(monthlyTrend);
+  const spark = computeSparkData(monthlyTrend);
+  const profitRate = num(summary.profitRate);
+  const profitClass = profitRate > 20 ? 'border-green' : profitRate > 10 ? 'border-amber' : profitRate > 0 ? '' : 'border-red';
   const cards = [
-    analyticsMetric("订单数", String(summary.orderCount || 0)),
-    analyticsMetric("收入 RMB", rmb(summary.incomeRmb)),
-    analyticsMetric("生产成本", rmb(summary.productionCostRmb)),
-    analyticsMetric("物流成本", rmb(summary.logisticsCostRmb)),
-    analyticsMetric("利润", rmb(summary.profitRmb)),
-    analyticsMetric("利润率", pct(summary.profitRate)),
-    analyticsMetric("客单价", rmb(summary.averageOrderValueRmb))
+    analyticsMetric("订单数", String(summary.orderCount || 0), "", "border-blue", trend.orders, spark.orders),
+    analyticsMetric("收入 RMB", rmb(summary.incomeRmb), "", "border-blue", trend.income, spark.income),
+    analyticsMetric("生产成本", rmb(summary.productionCostRmb), "", "border-amber", trend.production, spark.production),
+    analyticsMetric("利润", rmb(summary.profitRmb), "", profitClass, trend.profit, spark.profit),
+    analyticsMetric("利润率", pct(summary.profitRate), "", profitClass, trend.profitRate),
+    analyticsMetric("客单价", rmb(summary.averageOrderValueRmb), "", "border-teal", trend.avgOrderValue)
   ];
   if (channel === "shopify") {
-    cards.splice(4, 0, analyticsMetric("PayPal 手续费", rmb(summary.paypalFeeRmb)));
-    cards.splice(5, 0, analyticsMetric("税费", rmb(summary.taxRmb)));
+    cards.splice(4, 0, analyticsMetric("PayPal 手续费", rmb(summary.paypalFeeRmb), "", "border-red"));
   } else {
     const commission = (summary.incomeRmb || 0) * 0.15;
-    cards.splice(4, 0, analyticsMetric("平台佣金 (15%)", rmb(commission)));
+    cards.splice(4, 0, analyticsMetric("平台佣金 (15%)", rmb(commission), "", "border-red"));
   }
   el.innerHTML = cards.join("");
 }
@@ -393,12 +472,11 @@ function renderChannelTrendChart(channel, rows = []) {
     const incomeH = Math.max(2, Math.round(num(row.incomeRmb) / max * 100));
     const costH = Math.max(2, Math.round(num(row.totalCostRmb) / max * 100));
     const profitH = Math.max(2, Math.round(Math.abs(num(row.profitRmb)) / max * 100));
-    const bars = `<span class="trend-bar income" style="height:${incomeH}%"></span>
-      <span class="trend-bar cost" style="height:${costH}%"></span>
-      <span class="trend-bar profit" style="height:${profitH}%"></span>`;
-    const tip = `${esc(row.month)} 收入 ${rmb(row.incomeRmb)} / 支出 ${rmb(row.totalCostRmb)} / 利润 ${rmb(row.profitRmb)}`;
+    const bars = `<span class="trend-bar income" style="height:${incomeH}%" data-tooltip="收入: ${rmb(row.incomeRmb)}"></span>
+      <span class="trend-bar cost" style="height:${costH}%" data-tooltip="支出: ${rmb(row.totalCostRmb)}"></span>
+      <span class="trend-bar profit" style="height:${profitH}%" data-tooltip="利润: ${rmb(row.profitRmb)}"></span>`;
     return `<div class="trend-month">
-      <div class="trend-bars" title="${tip}">${bars}</div>
+      <div class="trend-bars">${bars}</div>
       <b>${esc(row.month)}</b>
     </div>`;
   }).join("");
@@ -407,12 +485,18 @@ function renderChannelTrendChart(channel, rows = []) {
 function renderChannelExpenseChart(channel, expenseBreakdown = []) {
   const el = $(channel === "shopify" ? "shopifyExpenseChart" : "amazonExpenseChart");
   if (!el) return;
+  const expenseGradients = {
+    production: 'linear-gradient(90deg, #059669, #34D399)',
+    logistics: 'linear-gradient(90deg, #2563EB, #60A5FA)',
+    paypal: 'linear-gradient(90deg, #D97706, #FBBF24)',
+    tax: 'linear-gradient(90deg, #DC2626, #F87171)',
+    commission: 'linear-gradient(90deg, #DC2626, #F87171)',
+  };
 
   let rows;
   if (channel === "shopify") {
-    rows = expenseBreakdown.filter(r => r.key !== "amazon_commission");
+    rows = expenseBreakdown.filter(r => r.key !== "amazon_commission" && r.key !== "tax");
   } else {
-    // 亚马逊: 生产成本 + 物流成本 + 平台佣金 15%
     const income = analyticsState.amazon?.summary?.incomeRmb || 0;
     const commission = income * 0.15;
     rows = [
@@ -431,9 +515,10 @@ function renderChannelExpenseChart(channel, expenseBreakdown = []) {
   el.className = "analytics-expense-chart";
   el.innerHTML = rows.map((row) => {
     const percent = total > 0 ? num(row.amountRmb) / total : 0;
+    const gradient = expenseGradients[row.key] || 'none';
     return `<div class="expense-row">
       <div class="expense-row-head"><span>${esc(row.label)}</span><b>${rmb(row.amountRmb)}</b></div>
-      <div class="expense-track"><span style="width:${Math.round(percent * 100)}%"></span></div>
+      <div class="expense-track"><span style="width:${Math.round(percent * 100)}%;background:${gradient}"></span></div>
       <small>${pct(percent)}</small>
     </div>`;
   }).join("");
@@ -467,7 +552,7 @@ function renderChannelProductTable(channel) {
 
 function renderChannelAnalytics(channel) {
   const data = analyticsState[channel] || {};
-  renderChannelSummary(channel, data.summary || {});
+  renderChannelSummary(channel, data.summary || {}, data.monthlyTrend || []);
   renderChannelTrendChart(channel, data.monthlyTrend || []);
   renderChannelExpenseChart(channel, data.expenseBreakdown || []);
   renderChannelProductTable(channel);
@@ -800,7 +885,6 @@ function orderFinancialSummaryHtml(order) {
   return `<div class="detail-section detail-section-amounts">
     <div class="detail-section-title">
       <h4>金额汇总</h4>
-      <span>金额右对齐，保留核心财务字段</span>
     </div>
     <div class="amount-summary-grid">
       ${rows.map(([label, value, cls]) => `<div class="amount-summary-row ${cls}">
@@ -965,7 +1049,46 @@ function renderNotifyPanel() {
   if (content) content.innerHTML = html;
 }
 
+function initChartTooltips() {
+  document.addEventListener('mouseover', (e) => {
+    const tip = e.target.closest('[data-tooltip]');
+    if (!tip) return;
+    let tooltip = document.querySelector('.chart-tooltip');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.className = 'chart-tooltip';
+      document.body.appendChild(tooltip);
+    }
+    tooltip.textContent = tip.dataset.tooltip;
+    tooltip.style.opacity = '1';
+    const rect = tip.getBoundingClientRect();
+    tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+    tooltip.style.top = (rect.top - tooltip.offsetHeight - 8 + window.scrollY) + 'px';
+  });
+  document.addEventListener('mouseout', (e) => {
+    if (!e.target.closest('[data-tooltip]')) return;
+    const tooltip = document.querySelector('.chart-tooltip');
+    if (tooltip) tooltip.style.opacity = '0';
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+  initChartTooltips();
+  // Theme toggle
+  function updateThemeButtons(theme) {
+    document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.themeValue === theme);
+    });
+  }
+  const themeLightBtn = document.getElementById('themeLightBtn');
+  const themeDarkBtn = document.getElementById('themeDarkBtn');
+  if (themeLightBtn) {
+    themeLightBtn.addEventListener('click', () => { window.TwodrapesTheme?.set('light'); updateThemeButtons('light'); });
+  }
+  if (themeDarkBtn) {
+    themeDarkBtn.addEventListener('click', () => { window.TwodrapesTheme?.set('dark'); updateThemeButtons('dark'); });
+  }
+  updateThemeButtons(window.TwodrapesTheme?.get() || 'light');
   const authReady = await window.TwodrapesAuthUI?.init({
     toast,
     verifyChannel: "management",
@@ -1089,6 +1212,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     const clearBtn = e.target.closest('[data-clear-reminder]');
     if (clearBtn) {
+      e.stopPropagation();
       const orderId = clearBtn.dataset.clearReminder;
       try {
         await json(`/api/orders/${orderId}/reminder`, { method: 'PUT', body: JSON.stringify({ reminder: 0, reminder_text: null }) });

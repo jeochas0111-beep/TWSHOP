@@ -46,3 +46,13 @@ label{color:var(--color-text-secondary);font-size:.8125rem;font-weight:500}
 .badge{display:inline-flex;align-items:center;font-family:var(--font-sans);font-size:.75rem;font-weight:500;padding:.125rem .5rem;border-radius:var(--radius-full);white-space:nowrap}
 .badge-primary{background:var(--color-primary-light);color:var(--color-primary)}.badge-success{background:var(--color-success-light);color:var(--color-success)}.badge-warning{background:var(--color-warning-light);color:#92400E}.badge-danger{background:var(--color-danger-light);color:var(--color-danger)}.badge-info{background:var(--color-info-light);color:var(--color-info)}
 .stat-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5)}.stat-label{font-size:.8125rem;color:var(--color-text-muted);font-weight:500}.stat-value{font-size:1.75rem;font-weight:700;letter-spacing:-.025em;color:var(--color-text);margin-top:var(--space-1)}.stat-change{font-size:.8125rem;margin-top:var(--space-1)}.stat-change-up{color:var(--color-success)}.stat-change-down{color:var(--color-danger)}
+/* Theme Toggle Button */
+.theme-toggle-wrap{display:inline-flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);box-shadow:var(--shadow-xs)}
+.theme-toggle-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 14px;font-size:13px;font-weight:600;border:0;border-radius:10px;background:transparent;color:var(--color-text-secondary);cursor:pointer;transition:all var(--duration-fast) var(--ease-out)}
+.theme-toggle-btn:hover{background:var(--color-bg-tertiary);color:var(--color-text)}
+.theme-toggle-btn.active{background:var(--color-primary);color:#fff;box-shadow:0 2px 8px rgba(124,58,237,.25)}
+.theme-toggle-btn svg{width:16px;height:16px}
+[data-theme="dark"] .theme-toggle-wrap{background:rgba(30,41,59,.8);border-color:rgba(255,255,255,.1)}
+[data-theme="dark"] .theme-toggle-btn{color:rgba(241,245,249,.6)}
+[data-theme="dark"] .theme-toggle-btn:hover{background:rgba(255,255,255,.08);color:#f1f5f9}
+[data-theme="dark"] .theme-toggle-btn.active{background:var(--color-primary);color:#fff}

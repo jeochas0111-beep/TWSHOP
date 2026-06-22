@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TWODRAPES ERP - 登录</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230b6dff'/%3E%3Cpath d='M18 18h28v8H36v20h-8V26H18z' fill='white'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23523A28'/%3E%3Cpath d='M18 18h28v8H36v20h-8V26H18z' fill='white'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/css/app.css?v=20260619-login-unified">
   <link rel="stylesheet" href="/css/twodrapes-theme.css">
   <script src="/js/channel-theme.js"></script>
@@ -18,56 +18,70 @@
       place-items: center;
       padding: 24px;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(64, 156, 255, 0.14), transparent 30%),
-        radial-gradient(circle at top right, rgba(104, 89, 255, 0.12), transparent 28%),
-        linear-gradient(180deg, #f7f9fc 0%, #eef2f7 100%);
+      background: #f5f5f7;
+      transition: background 0.3s ease;
+    }
+    [data-theme="dark"] body {
+      background: #0f172a;
     }
     .login-shell {
-      width: min(100%, 440px);
-      padding: 34px 30px 28px;
-      border-radius: 28px;
-      border: 1px solid rgba(255,255,255,.72);
-      background: rgba(255,255,255,.82);
-      box-shadow:
-        0 28px 80px rgba(15,23,42,.12),
-        inset 0 1px 0 rgba(255,255,255,.82);
-      backdrop-filter: blur(24px) saturate(155%);
-      -webkit-backdrop-filter: blur(24px) saturate(155%);
+      width: min(100%, 400px);
+      padding: 40px 32px 36px;
+      border-radius: 20px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    [data-theme="dark"] .login-shell {
+      background: #1f2937;
+      border-color: #374151;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2), 0 4px 12px rgba(0,0,0,.15);
     }
     .login-brand {
       display: grid;
-      gap: 8px;
-      margin-bottom: 22px;
+      gap: 6px;
+      margin-bottom: 28px;
     }
     .login-brand-badge {
       display: inline-flex;
       align-items: center;
       width: fit-content;
-      min-height: 28px;
-      padding: 0 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(214,223,237,.94);
-      background: rgba(255,255,255,.72);
-      color: #4b5d77;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0;
+      min-height: 26px;
+      padding: 0 10px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      color: #6b7280;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    [data-theme="dark"] .login-brand-badge {
+      background: #374151;
+      color: #9ca3af;
+      border-color: #4b5563;
     }
     .login-brand h1 {
       margin: 0;
-      color: #142033;
-      font-size: 30px;
-      line-height: 1.08;
-      font-weight: 800;
-      letter-spacing: 0;
+      color: #111827;
+      font-size: 26px;
+      line-height: 1.2;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      transition: color 0.3s ease;
     }
+    [data-theme="dark"] .login-brand h1 { color: #f9fafb; }
     .login-brand p {
       margin: 0;
-      color: rgba(20,32,51,.62);
-      font-size: 13px;
-      line-height: 1.6;
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.5;
+      transition: color 0.3s ease;
     }
+    [data-theme="dark"] .login-brand p { color: #9ca3af; }
     .login-form {
       display: grid;
       gap: 16px;
@@ -82,7 +96,9 @@
       font-weight: 700;
       letter-spacing: 0;
       text-transform: uppercase;
+      transition: color 0.3s ease;
     }
+    [data-theme="dark"] .login-field label { color: #94a3b8; }
     .login-field input {
       width: 100%;
       min-height: 48px;
@@ -96,11 +112,18 @@
       box-shadow:
         inset 0 1px 0 rgba(255,255,255,.88),
         0 1px 2px rgba(15,23,42,.04);
-      transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+      transition: border-color .16s ease, box-shadow .16s ease, background .16s ease, color .16s ease;
+    }
+    [data-theme="dark"] .login-field input {
+      background: rgba(30,41,59,.8);
+      border-color: rgba(255,255,255,.1);
+      color: #f1f5f9;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
     }
     .login-field input::placeholder {
       color: rgba(77,94,119,.45);
     }
+    [data-theme="dark"] .login-field input::placeholder { color: rgba(148,163,184,.5); }
     .login-field input:focus {
       outline: none;
       border-color: rgba(37,99,235,.72);
@@ -128,7 +151,9 @@
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
+      transition: color 0.3s ease;
     }
+    [data-theme="dark"] .remember-check { color: #94a3b8; }
     .remember-check input {
       width: 18px;
       height: 18px;
@@ -149,10 +174,21 @@
       background: rgba(254,242,242,.92);
       color: #9f1c1c;
     }
+    [data-theme="dark"] .login-alert--error {
+      background: rgba(220,38,38,.15);
+      color: #fca5a5;
+      border-color: rgba(220,38,38,.3);
+    }
     .login-alert--warning {
       border: 1px solid rgba(234,179,8,.20);
       background: rgba(254,249,195,.92);
       color: #8a4b06;
+    }
+    [data-theme="dark"] .login-alert--warning {
+      background: rgba(234,179,8,.15);
+      color: #fcd34d;
+      border-color: rgba(234,179,8,.3);
+    }
     }
     .login-btn {
       width: 100%;
@@ -206,6 +242,16 @@
   </style>
 </head>
 <body>
+  <div class="theme-toggle-wrap" style="position:fixed;top:16px;right:16px;z-index:100">
+    <button class="theme-toggle-btn active" id="themeLightBtn" type="button" data-theme-value="light">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <span>Light</span>
+    </button>
+    <button class="theme-toggle-btn" id="themeDarkBtn" type="button" data-theme-value="dark">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <span>Dark</span>
+    </button>
+  </div>
   <main class="login-shell">
     <section class="login-brand">
       <span class="login-brand-badge">TWODRAPES ERP</span>
@@ -240,6 +286,31 @@
 
   <script>
     (function () {
+      // Theme toggle
+      var currentTheme = localStorage.getItem('twodrapes-theme');
+      if (currentTheme) document.documentElement.setAttribute('data-theme', currentTheme);
+      function updateThemeButtons(theme) {
+        document.querySelectorAll('.theme-toggle-btn').forEach(function(btn) {
+          btn.classList.toggle('active', btn.dataset.themeValue === theme);
+        });
+      }
+      var themeLightBtn = document.getElementById('themeLightBtn');
+      var themeDarkBtn = document.getElementById('themeDarkBtn');
+      if (themeLightBtn) {
+        themeLightBtn.addEventListener('click', function() {
+          document.documentElement.setAttribute('data-theme', 'light');
+          localStorage.setItem('twodrapes-theme', 'light');
+          updateThemeButtons('light');
+        });
+      }
+      if (themeDarkBtn) {
+        themeDarkBtn.addEventListener('click', function() {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('twodrapes-theme', 'dark');
+          updateThemeButtons('dark');
+        });
+      }
+      updateThemeButtons(currentTheme || 'light');
       const APP_PATHS = {
         management: '/admin',
         shopify: '/ops/shopify',

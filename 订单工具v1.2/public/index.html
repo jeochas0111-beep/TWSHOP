@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Twodrapes 订单工具</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230b6dff'/%3E%3Cpath d='M18 18h28v8H36v20h-8V26H18z' fill='white'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23523A28'/%3E%3Cpath d='M18 18h28v8H36v20h-8V26H18z' fill='white'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/app.css?v=20260613-ui-opt">
+  <link rel="stylesheet" href="/css/app.css?v=20260623-usermenu">
   <link rel="stylesheet" href="/css/twodrapes-theme.css">
   <script src="/js/channel-theme.js"></script>
 </head>
@@ -22,16 +22,18 @@
       <button data-tab="orders" role="tab" aria-selected="false" aria-controls="page-orders">订单</button>
       <button data-tab="analytics" role="tab" aria-selected="false" aria-controls="page-analytics">数据分析</button>
       <button data-tab="products" role="tab" aria-selected="false" aria-controls="page-products">产品控制</button>
-      <div class="tools-dropdown">
-        <button class="tools-dropdown-btn" type="button" aria-haspopup="true" aria-expanded="false">工具 ▾</button>
-        <div class="tools-dropdown-menu hidden" id="toolsDropdownMenu">
-          <button data-tool="splice" type="button">拼接计算器</button>
-          <button data-tool="profit" type="button">利润计算器</button>
-          <button data-tool="tax" type="button">各州税率</button>
-        </div>
-      </div>
     </nav>
     <div class="topbar-actions">
+      <div class="theme-toggle-wrap">
+        <button class="theme-toggle-btn active" id="themeLightBtn" type="button" data-theme-value="light">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <span>Light</span>
+        </button>
+        <button class="theme-toggle-btn" id="themeDarkBtn" type="button" data-theme-value="dark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <span>Dark</span>
+        </button>
+      </div>
       <div class="channel-switcher-wrap hidden" id="channelSwitcherWrap">
         <button class="channel-switcher-btn" id="channelSwitcherBtn" type="button" aria-haspopup="true" aria-expanded="false">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -492,7 +494,6 @@
           </div>
           <section class="analytics-panel product-analytics-panel">
             <div class="section-title compact">
-              <h3>产品对比</h3>
               <label class="analytics-sort-label">排序
                 <select class="analytics-product-sort" data-channel="shopify">
                   <option value="income">按收入</option>
@@ -501,6 +502,7 @@
                   <option value="qty">按销量</option>
                 </select>
               </label>
+              <h3>产品对比</h3>
             </div>
             <div class="table-wrap analytics-table-wrap"><table id="shopifyProductTable"></table></div>
           </section>
@@ -531,7 +533,6 @@
           </div>
           <section class="analytics-panel product-analytics-panel">
             <div class="section-title compact">
-              <h3>产品对比</h3>
               <label class="analytics-sort-label">排序
                 <select class="analytics-product-sort" data-channel="amazon">
                   <option value="income">按收入</option>
@@ -540,6 +541,7 @@
                   <option value="qty">按销量</option>
                 </select>
               </label>
+              <h3>产品对比</h3>
             </div>
             <div class="table-wrap analytics-table-wrap"><table id="amazonProductTable"></table></div>
           </section>
@@ -567,6 +569,30 @@
               <thead><tr><th style="width:120px">州代码</th><th>州名称</th><th style="width:160px">税率 %</th></tr></thead>
               <tbody id="taxRatesBody"></tbody>
             </table>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- 生产看板 -->
+    <section id="page-production" class="page" role="tabpanel" style="display:none">
+      <article class="card">
+        <div class="card-header">
+          <div class="section-title">
+            <h2>生产看板</h2>
+            <div class="toolbar">
+              <input type="text" id="productionSearchInput" placeholder="搜索订单号/客户名..." style="padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;min-width:200px">
+              <select id="productionStatusFilter" style="padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px">
+                <option value="production">待生产</option>
+                <option value="all">全部</option>
+              </select>
+              <button class="btn secondary small" onclick="loadProductionBoard()">刷新</button>
+            </div>
+          </div>
+        </div>
+        <div class="card-content">
+          <div id="productionBoardGrid" class="production-board-grid">
+            <div class="empty">点击刷新加载生产订单</div>
           </div>
         </div>
       </article>
