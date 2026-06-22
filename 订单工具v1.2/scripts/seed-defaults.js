@@ -35,6 +35,13 @@ const globals = {
   shopifyApiVersion: '2026-01'
 };
 
+const defaultUsers = [
+  { channel: 'management', username: 'admin', password: 'admin', role: 'admin', display_name: '平台管理员' },
+  { channel: 'shopify', username: 'twshop', password: 'twshop', role: 'operator', display_name: '独立站运营' },
+  { channel: 'amazon', username: 'twama', password: 'twama', role: 'operator', display_name: '亚马逊运营' },
+  { channel: 'production', username: 'twprod', password: 'twprod', role: 'operator', display_name: '生产端' }
+];
+
 const fallback = {
   fabrics: [
     { id: 'fabric_dmdd', name: '涤麻大肚', series: '涤麻大肚', widthCm: 340, pricePerM: 26.14, enabled: true },
@@ -130,8 +137,15 @@ function seed(db) {
     [[0, 3.2, 6, 1.5, 0], [3.2, 4.5, 12, 1.5, 0], [4.5, 5.5, 25, 1.5, 0], [5.5, 7, 45, 1.5, 0], [7, null, 0, 1.5, 1]].forEach((r, i) => memory.run(r[0], r[1], r[2], r[3], r[4], '', i));
     const tax = db.prepare('INSERT INTO tax_rates(code,state,rate,note) VALUES(?,?,?,?)');
     taxRates.forEach(r => tax.run(r.code, r.state, r.rate, r.note));
+    // Seed default users
+    const { hashPassword } = require('../src/utils/auth');
+    const userStmt = db.prepare('INSERT OR IGNORE INTO users(channel,username,password_hash,salt,display_name,role,enabled,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)');
+    for (const u of defaultUsers) {
+      const { hash, salt } = hashPassword(u.password);
+      userStmt.run(u.channel, u.username, hash, salt, u.display_name, u.role, 1, now, now);
+    }
   });
   tx();
 }
 
-module.exports = { seed, fallback, globals, taxRates };
+module.exports = { seed, fallback, globals, taxRates, defaultUsers };

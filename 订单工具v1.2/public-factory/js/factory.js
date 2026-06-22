@@ -97,6 +97,7 @@ function orderStatusCls(status) {
 
 function channelLabel(ch) {
   if (ch === "management") return "管理端";
+  if (ch === "production") return "生产端";
   return ch === "amazon" ? "亚马逊" : "独立站";
 }
 
@@ -106,6 +107,7 @@ function userRoleLabel(role) {
 
 function userWorkbenchLabel(user) {
   if (user.role === "admin") return "/admin";
+  if (user.channel === "production") return "/production";
   return user.channel === "amazon" ? "/ops/amazon" : "/ops/shopify";
 }
 

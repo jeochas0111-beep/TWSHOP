@@ -147,6 +147,8 @@ app.use('/ops/shopify', express.static(publicDir, { maxAge: '1h', etag: true, in
 app.use('/ops/amazon', express.static(publicDir, { maxAge: '1h', etag: true, index: false }));
 app.use('/admin', express.static(factoryDir, { maxAge: '1h', etag: true, index: false }));
 app.use('/admin', express.static(publicDir, { maxAge: '1h', etag: true, index: false }));
+const productionDir = path.join(__dirname, 'public-production');
+app.use('/production', express.static(productionDir, { maxAge: '1h', etag: true, index: false }));
 
 // 管理端中间件
 factoryApp.use(cors);
@@ -163,6 +165,7 @@ factoryApp.use((req, res, next) => {
 });
 factoryApp.use(express.static(factoryDir, { maxAge: '1h', etag: true }));
 factoryApp.use(express.static(publicDir, { maxAge: '1h', etag: true }));
+factoryApp.use('/production', express.static(productionDir, { maxAge: '1h', etag: true }));
 
 // 亚马逊端中间件（共用 public/ 前端）
 amazonApp.use(cors);
@@ -229,6 +232,17 @@ app.get(['/admin', '/admin/*'], (req, res, next) => {
   }, req);
 });
 
+app.get(['/production', '/production/*'], (req, res, next) => {
+  if (isAssetRequest(req)) return next();
+  const productionDir = path.join(__dirname, 'public-production');
+  sendHtmlPage(res, path.join(productionDir, 'index.html'), {
+    app: 'production',
+    channel: 'production',
+    basePath: CHANNEL_PATHS.production,
+    assetBasePath: CHANNEL_PATHS.production
+  }, req);
+});
+
 // ========== 统一门户 API（8080） ==========
 app.use('/api/auth', unifiedAuthRoutes());
 app.use('/api', resolvePortalAppContext, jwtAuth());
@@ -268,6 +282,17 @@ factoryApp.use('/api', sampleRoutes());
 factoryApp.use('/api', productionPhotosRoutes);
 factoryApp.get('/api/bootstrap', (req, res) => {
   res.json({ ...context(req.channel), features: appConfig, rates: appConfig.rateConfig() });
+});
+
+factoryApp.get(['/production', '/production/*'], (req, res, next) => {
+  if (isAssetRequest(req)) return next();
+  const productionDir = path.join(__dirname, 'public-production');
+  sendHtmlPage(res, path.join(productionDir, 'index.html'), {
+    app: 'production',
+    channel: 'production',
+    basePath: CHANNEL_PATHS.production,
+    assetBasePath: CHANNEL_PATHS.production
+  }, req);
 });
 
 // ========== 亚马逊端路由 ==========

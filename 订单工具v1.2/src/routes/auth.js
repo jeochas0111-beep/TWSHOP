@@ -6,10 +6,10 @@ const appConfig = require('../config');
 const { requireAdmin } = require('../utils/api');
 
 const loginAttempts = new Map();
-const CHANNEL_PORTS = { shopify: '8080', amazon: '8082', management: '8081' };
-const CHANNEL_PATHS = { shopify: '/ops/shopify', amazon: '/ops/amazon', management: '/admin' };
+const CHANNEL_PORTS = { shopify: '8080', amazon: '8082', management: '8081', production: '8083' };
+const CHANNEL_PATHS = { shopify: '/ops/shopify', amazon: '/ops/amazon', management: '/admin', production: '/production' };
 const ALL_CHANNELS = ['shopify', 'amazon'];
-const FIXED_SYSTEM_USERS = new Set(['admin', 'twshop', 'twama']);
+const FIXED_SYSTEM_USERS = new Set(['admin', 'twshop', 'twama', 'twprod']);
 
 function loginRateLimit(req, res, next) {
   const key = req.ip || req.socket?.remoteAddress || 'local';
@@ -339,8 +339,8 @@ function managementAuthRoutes() {
       if (!channel || !username || !password) {
         return res.status(400).json({ ok: false, error: '请选择渠道并输入用户名和密码' });
       }
-      if (!['shopify', 'amazon'].includes(channel)) {
-        return res.status(400).json({ ok: false, error: '渠道必须是 shopify 或 amazon' });
+      if (!['shopify', 'amazon', 'production'].includes(channel)) {
+        return res.status(400).json({ ok: false, error: '渠道必须是 shopify、amazon 或 production' });
       }
       const user = db.prepare('SELECT * FROM users WHERE channel = ? AND username = ? AND enabled = 1').get(channel, username);
       if (!user || !verifyPassword(password, user.password_hash, user.salt)) {
@@ -377,6 +377,7 @@ function userRoutes() {
               WHEN 'management' THEN 0
               WHEN 'shopify' THEN 1
               WHEN 'amazon' THEN 2
+              WHEN 'production' THEN 3
               ELSE 9
             END,
             id

@@ -2,17 +2,20 @@
   const CHANNEL_LABELS = {
     management: '管理端',
     shopify: '独立站',
-    amazon: '亚马逊'
+    amazon: '亚马逊',
+    production: '生产端'
   };
   const APP_LABELS = {
     shopify: '独立站运营端',
     amazon: '亚马逊运营端',
-    management: '管理端'
+    management: '管理端',
+    production: '生产端'
   };
   const APP_PATHS = {
     shopify: '/ops/shopify',
     management: '/admin',
-    amazon: '/ops/amazon'
+    amazon: '/ops/amazon',
+    production: '/production'
   };
 
   function appContext() {
