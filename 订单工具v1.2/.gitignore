@@ -13,6 +13,7 @@ data/debug-order.sqlite
 twodrapes-e2e.sqlite
 *.log
 .env
+.env.bak
 .shopify-appdata/
 .npm-cache/
 artifacts/
